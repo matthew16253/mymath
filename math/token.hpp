@@ -8,49 +8,66 @@
 namespace mymath
 {
   Token::Token() : dataptr(nullptr), type(DT_UNINIT)  {}
-  Token::Token(std::shared_ptr<void> _dataptr,TokenType _type) : dataptr(_dataptr), type(_type)  {}
+  Token::Token(void* _dataptr,TokenType _type) : dataptr(_dataptr), type(_type)  {}
   Token::~Token()
   {
-    // switch(type)
-    // {
-    //   case DT_REAL:  {delete static_cast<long double*>(dataptr);break;}
-    //   case DT_COMPLEX:  {delete static_cast<std::complex<Token>*>(dataptr);break;}
-    //   case DT_VECTOR:  {delete static_cast<mymath::vecn<Token>*>(dataptr);break;}
-    //   case DT_MATRIX:  {delete static_cast<mymath::matn<Token>*>(dataptr);break;}
-    //   case DT_ALGEBRAIC_EXPR:  {delete static_cast<ExpressionTreeNode*>(dataptr);break;}
-    //   default:  {}
-    // }
+    switch(type)
+    {
+      case DT_REAL:  {delete static_cast<long double*>(dataptr);break;}
+      case DT_COMPLEX:  {delete static_cast<std::complex<Token>*>(dataptr);break;}
+      case DT_VECTOR:  {delete static_cast<mymath::vecn<Token>*>(dataptr);break;}
+      case DT_MATRIX:  {delete static_cast<mymath::matn<Token>*>(dataptr);break;}
+      case DT_ALGEBRAIC_EXPR:  {delete static_cast<ExpressionTreeNode*>(dataptr);break;}
+      default:  {}
+    }
   }
-  Token::Token(const Token& other, CopyTag)  :  type(other.type)
+  Token::Token(const Token& other)  :  type(other.type)
   {
     switch(other.type)
     {
       case DT_REAL:
-        {dataptr = std::static_pointer_cast<void>(std::make_shared<long double>(std::static_pointer_cast<long double>(other.dataptr)));  break;}
+        {dataptr = static_cast<void*>(new long double(*static_cast<long double*>(other.dataptr)));  break;}
       case DT_COMPLEX:
-        {dataptr = std::static_pointer_cast<void>(std::make_shared<std::complex<Token>>(std::static_pointer_cast<std::complex<Token>>(other.dataptr)));  break;}
+        {dataptr = static_cast<void*>(new std::complex<Token>(*static_cast<std::complex<Token>*>(other.dataptr)));  break;}
       case DT_VECTOR:
-        {dataptr = std::static_pointer_cast<void>(std::make_shared<long double>(std::static_pointer_cast<long double>(other.dataptr)));  break;}
+        {dataptr = static_cast<void*>(new mymath::vecn(*static_cast<mymath::vecn<Token>*>(other.dataptr)));  break;}
       case DT_MATRIX:
-        {dataptr = std::static_pointer_cast<void>(std::make_shared<long double>(std::static_pointer_cast<long double>(other.dataptr)));  break;}
+        {dataptr = static_cast<void*>(new mymath::matn<Token>(*static_cast<mymath::matn<Token>*>(other.dataptr)));  break;}
       case DT_ALGEBRAIC_EXPR:
-        {dataptr = std::static_pointer_cast<void>(std::make_shared<long double>(std::static_pointer_cast<long double>(other.dataptr)));  break;}
+        {dataptr = static_cast<void*>(new mymath::ExpressionTreeNode(*static_cast<mymath::ExpressionTreeNode*>(other.dataptr)));  break;}
       default:  {}
     }
   }
-  Token::Token(const Token& other, MoveTag) : dataptr(other.dataptr), type(other.type)
-  {
-    ;
-  }
   Token::Token(Token&& other) : dataptr(other.dataptr), type(other.type)
   {
-    ;
+    other.empty();
   }
   
   Token& Token::operator=(const Token& other)
   {
-    dataptr = other.dataptr;
-    type = other.type;
+    switch(type)
+    {
+      case DT_REAL:  {delete static_cast<long double*>(dataptr);break;}
+      case DT_COMPLEX:  {delete static_cast<std::complex<Token>*>(dataptr);break;}
+      case DT_VECTOR:  {delete static_cast<mymath::vecn<Token>*>(dataptr);break;}
+      case DT_MATRIX:  {delete static_cast<mymath::matn<Token>*>(dataptr);break;}
+      case DT_ALGEBRAIC_EXPR:  {delete static_cast<ExpressionTreeNode*>(dataptr);break;}
+      default:  {}
+    }
+    switch(other.type)
+    {
+      case DT_REAL:
+        {dataptr = static_cast<void*>(new long double(*static_cast<long double*>(other.dataptr)));  break;}
+      case DT_COMPLEX:
+        {dataptr = static_cast<void*>(new std::complex<Token>(*static_cast<std::complex<Token>*>(other.dataptr)));  break;}
+      case DT_VECTOR:
+        {dataptr = static_cast<void*>(new mymath::vecn(*static_cast<mymath::vecn<Token>*>(other.dataptr)));  break;}
+      case DT_MATRIX:
+        {dataptr = static_cast<void*>(new mymath::matn<Token>(*static_cast<mymath::matn<Token>*>(other.dataptr)));  break;}
+      case DT_ALGEBRAIC_EXPR:
+        {dataptr = static_cast<void*>(new mymath::ExpressionTreeNode(*static_cast<mymath::ExpressionTreeNode*>(other.dataptr)));  break;}
+      default:  {}
+    }
     return *this;
   }
   
@@ -58,7 +75,13 @@ namespace mymath
   {
     dataptr = other.dataptr;
     type = other.type;
+    other.empty();
     return *this;
+  }
+  void Token::empty()
+  {
+    dataptr = nullptr;
+    type = DT_UNINIT;
   }
 }
   mymath::Token operator+(mymath::Token& a, mymath::Token& b) // DO NOT USE THE INPUTTED TOKENS
@@ -67,18 +90,18 @@ namespace mymath
     {
       case mymath::TokenType::DT_REAL:
       {
-        std::shared_ptr<long double> real_a_ptr = std::static_pointer_cast<long double>(a.dataptr);
+        long double* real_a_ptr = static_cast<long double*>(a.dataptr);
         switch(b.type)
         {
           case mymath::TokenType::DT_REAL:
           {
-            *real_a_ptr += *std::static_pointer_cast<long double>(b.dataptr);
+            *real_a_ptr += *static_cast<long double*>(b.dataptr);
             return mymath::Token(a.dataptr  ,  mymath::TokenType::DT_REAL);
             break;
           }
           case mymath::TokenType::DT_COMPLEX:
           {
-            *std::static_pointer_cast<std::complex<mymath::Token>>(b.dataptr) += a;
+            *static_cast<std::complex<mymath::Token>*>(b.dataptr) += a;
             return mymath::Token(b.dataptr  ,  mymath::TokenType::DT_COMPLEX);
             break;
           }
@@ -86,7 +109,7 @@ namespace mymath
           {
             //return mymath::Token(new mymath::ExpressionTreeNode(a + *std::static_pointer_cast<mymath::ExpressionTreeNode*>(b.dataptr))  ,  mymath::TokenType::DT_ALGEBRAIC_EXPR);
             // KEY EXMAPLE ON HOW TO USE THE EXPR TREE
-            std::shared_ptr<mymath::ExpressionTreeNode> new_tree = std::static_pointer_cast<mymath::ExpressionTreeNode>(b.dataptr);
+            mymath::ExpressionTreeNode* new_tree = static_cast<mymath::ExpressionTreeNode*>(b.dataptr);
             applyBinaryOperation(new_tree,mymath::TokenType::OP_ADD,a);
             return mymath::Token(new_tree,mymath::TokenType::DT_ALGEBRAIC_EXPR);
             break;
@@ -94,14 +117,14 @@ namespace mymath
           default:
           {
             mymath::TokenType arr[] = {a.type,b.type};
-            return mymath::Token(std::static_pointer_cast<void>(std::make_shared<mymath::InfoLog<2,mymath::TokenType>>(arr)),mymath::TokenType::ERROR_INVALID_2_OPERANDS);
+            return mymath::Token(static_cast<void*>(new mymath::InfoLog<2,mymath::TokenType>(arr)),mymath::TokenType::ERROR_INVALID_2_OPERANDS);
           }
         }
         break;
       }
       case mymath::TokenType::DT_COMPLEX:
       {
-        std::shared_ptr<std::complex<mymath::Token>> complex_a_ptr = std::static_pointer_cast<std::complex<mymath::Token>>(a.dataptr);
+        std::complex<mymath::Token>* complex_a_ptr = static_cast<std::complex<mymath::Token>*>(a.dataptr);
         switch(b.type)
         {
           case mymath::TokenType::DT_REAL:
@@ -112,13 +135,13 @@ namespace mymath
           }
           case mymath::TokenType::DT_COMPLEX:
           {
-            *complex_a_ptr += *std::static_pointer_cast<std::complex<mymath::Token>>(b.dataptr);
+            *complex_a_ptr += *static_cast<std::complex<mymath::Token>*>(b.dataptr);
             return mymath::Token(a.dataptr  ,  mymath::TokenType::DT_COMPLEX);
             break;
           }
           case mymath::TokenType::DT_ALGEBRAIC_EXPR:
           {
-            std::shared_ptr<mymath::ExpressionTreeNode> new_tree = std::static_pointer_cast<mymath::ExpressionTreeNode>(b.dataptr);
+            mymath::ExpressionTreeNode* new_tree = static_cast<mymath::ExpressionTreeNode*>(b.dataptr);
             applyBinaryOperation(new_tree,mymath::TokenType::OP_ADD,a);
             return mymath::Token(new_tree,mymath::TokenType::DT_ALGEBRAIC_EXPR);
             break;
@@ -126,23 +149,23 @@ namespace mymath
           default:
           {
             mymath::TokenType arr[] = {a.type, b.type};
-            return mymath::Token(std::static_pointer_cast<void>(std::make_shared<mymath::InfoLog<2,mymath::TokenType>>(arr)), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
+            return mymath::Token(static_cast<void*>(new mymath::InfoLog<2,mymath::TokenType>(arr)), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
           }
         }
         break;
       }
       case mymath::TokenType::DT_VECTOR:
       {
-        std::shared_ptr<mymath::vecn<mymath::Token>> vector_a_ptr = std::static_pointer_cast<mymath::vecn<mymath::Token>>(a.dataptr);
+        mymath::vecn<mymath::Token>* vector_a_ptr = static_cast<mymath::vecn<mymath::Token>*>(a.dataptr);
         switch(b.type)
         {
           case mymath::TokenType::DT_VECTOR:
           {
-            std::shared_ptr<mymath::vecn<mymath::Token>> vector_b_ptr = std::static_pointer_cast<mymath::vecn<mymath::Token>>(b.dataptr);
+            mymath::vecn<mymath::Token>* vector_b_ptr = static_cast<mymath::vecn<mymath::Token>*>(b.dataptr);
             if(vector_a_ptr->height != vector_b_ptr->height)
             {
               int arr[] = {vector_a_ptr->height,vector_b_ptr->height};
-              return mymath::Token(std::make_shared<mymath::InfoLog<2,int>>(arr), mymath::TokenType::ERROR_INVALID_VEC_DIMS);
+              return mymath::Token(new mymath::InfoLog<2,int>(arr), mymath::TokenType::ERROR_INVALID_VEC_DIMS);
             }
             else
             {
@@ -153,12 +176,12 @@ namespace mymath
           }
           case mymath::TokenType::DT_MATRIX:
           {
-            std::shared_ptr<mymath::matn<mymath::Token>> matrix_b_ptr = std::static_pointer_cast<mymath::matn<mymath::Token>>(b.dataptr);
+            mymath::matn<mymath::Token>* matrix_b_ptr = static_cast<mymath::matn<mymath::Token>*>(b.dataptr);
             if(vector_a_ptr->height != matrix_b_ptr->width  &&  matrix_b_ptr->height != 1)
             {
               mymath::MatDimension arr[] = {mymath::MatDimension(vector_a_ptr->height,1) ,
                 mymath::MatDimension(matrix_b_ptr->width,matrix_b_ptr->height)};
-              return mymath::Token(std::make_shared<mymath::InfoLog<2,mymath::MatDimension>>(arr)  ,  mymath::TokenType::ERROR_INVALID_MAT_DIMS);
+              return mymath::Token(new mymath::InfoLog<2,mymath::MatDimension>(arr)  ,  mymath::TokenType::ERROR_INVALID_MAT_DIMS);
             }
             else
             {
@@ -169,7 +192,7 @@ namespace mymath
           }
           case mymath::TokenType::DT_ALGEBRAIC_EXPR:
           {
-            std::shared_ptr<mymath::ExpressionTreeNode> new_tree = std::static_pointer_cast<mymath::ExpressionTreeNode>(b.dataptr);
+            mymath::ExpressionTreeNode* new_tree = static_cast<mymath::ExpressionTreeNode*>(b.dataptr);
             applyBinaryOperation(new_tree,mymath::TokenType::OP_ADD,a);
             return mymath::Token(new_tree, mymath::TokenType::DT_ALGEBRAIC_EXPR);
             break;
@@ -177,24 +200,24 @@ namespace mymath
           default:
           {
             mymath::TokenType arr[] = {a.type,b.type};
-            return mymath::Token(std::make_shared<mymath::InfoLog<2,mymath::TokenType>>(arr), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
+            return mymath::Token(new mymath::InfoLog<2,mymath::TokenType>(arr), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
           }
         }
         break;
       }
       case mymath::TokenType::DT_MATRIX:
       {
-        std::shared_ptr<mymath::matn<mymath::Token>> matrix_a_ptr = std::static_pointer_cast<mymath::matn<mymath::Token>>(a.dataptr);
+        mymath::matn<mymath::Token>* matrix_a_ptr = static_cast<mymath::matn<mymath::Token>*>(a.dataptr);
         switch(b.type)
         {
           case mymath::TokenType::DT_VECTOR:
           {
-            std::shared_ptr<mymath::vecn<mymath::Token>> vector_b_ptr = std::static_pointer_cast<mymath::vecn<mymath::Token>>(b.dataptr);
+            mymath::vecn<mymath::Token>* vector_b_ptr = static_cast<mymath::vecn<mymath::Token>*>(b.dataptr);
             if(matrix_a_ptr->width != vector_b_ptr->height  &&  matrix_a_ptr->height != 1)
             {
               mymath::MatDimension arr[] = {mymath::MatDimension(matrix_a_ptr->width,matrix_a_ptr->height) ,
                 mymath::MatDimension(vector_b_ptr->height,1)};
-              return mymath::Token(std::make_shared<mymath::InfoLog<2,mymath::MatDimension>>(arr)  ,  mymath::TokenType::ERROR_INVALID_MAT_DIMS);
+              return mymath::Token(new mymath::InfoLog<2,mymath::MatDimension>(arr)  ,  mymath::TokenType::ERROR_INVALID_MAT_DIMS);
             }
             else
             {
@@ -205,12 +228,12 @@ namespace mymath
           }
           case mymath::TokenType::DT_MATRIX:
           {
-            std::shared_ptr<mymath::matn<mymath::Token>> matrix_b_ptr = std::static_pointer_cast<mymath::matn<mymath::Token>>(a.dataptr);
+            mymath::matn<mymath::Token>* matrix_b_ptr = static_cast<mymath::matn<mymath::Token>*>(a.dataptr);
             if(matrix_a_ptr->width != matrix_b_ptr->width  &&  matrix_a_ptr->height != matrix_b_ptr->height)
             {
               mymath::MatDimension arr[] = {mymath::MatDimension(matrix_a_ptr->width,matrix_a_ptr->height) ,
                 mymath::MatDimension(matrix_b_ptr->width,matrix_b_ptr->height)};
-              return mymath::Token(std::make_shared<mymath::InfoLog<2,mymath::MatDimension>>(arr)  ,  mymath::TokenType::ERROR_INVALID_MAT_DIMS);
+              return mymath::Token(new mymath::InfoLog<2,mymath::MatDimension>(arr)  ,  mymath::TokenType::ERROR_INVALID_MAT_DIMS);
             }
             else
             {
@@ -221,7 +244,7 @@ namespace mymath
           }
           case mymath::TokenType::DT_ALGEBRAIC_EXPR:
           {
-            std::shared_ptr<mymath::ExpressionTreeNode> new_tree = std::static_pointer_cast<mymath::ExpressionTreeNode>(b.dataptr);
+            mymath::ExpressionTreeNode* new_tree = static_cast<mymath::ExpressionTreeNode*>(b.dataptr);
             applyBinaryOperation(new_tree,mymath::TokenType::OP_ADD,a);
             return mymath::Token(new_tree, mymath::TokenType::DT_ALGEBRAIC_EXPR);
             break;
@@ -229,14 +252,14 @@ namespace mymath
           default:
           {
             mymath::TokenType arr[] = {a.type,b.type};
-            return mymath::Token(std::make_shared<mymath::InfoLog<2,mymath::TokenType>>(arr), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
+            return mymath::Token(new mymath::InfoLog<2,mymath::TokenType>(arr), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
           }
         }
         break;
       }
       case mymath::TokenType::DT_ALGEBRAIC_EXPR:
       {
-        std::shared_ptr<mymath::ExpressionTreeNode> new_tree = std::static_pointer_cast<mymath::ExpressionTreeNode>(a.dataptr);
+        mymath::ExpressionTreeNode* new_tree = static_cast<mymath::ExpressionTreeNode*>(a.dataptr);
         switch(b.type)
         {
           case mymath::TokenType::DT_REAL:
@@ -265,7 +288,7 @@ namespace mymath
           }
           case mymath::TokenType::DT_ALGEBRAIC_EXPR:
           {
-            std::shared_ptr<mymath::ExpressionTreeNode> tree_b_ptr = std::static_pointer_cast<mymath::ExpressionTreeNode>(b.dataptr);
+            mymath::ExpressionTreeNode* tree_b_ptr = static_cast<mymath::ExpressionTreeNode*>(b.dataptr);
             applyBinaryOperation(new_tree, mymath::TokenType::OP_ADD, tree_b_ptr);
             return mymath::Token(new_tree  ,  mymath::TokenType::DT_ALGEBRAIC_EXPR);
             break;
@@ -273,7 +296,7 @@ namespace mymath
           default:
           {
             mymath::TokenType arr[] = {a.type,b.type};
-            return mymath::Token(std::make_shared<mymath::InfoLog<2,mymath::TokenType>>(arr), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
+            return mymath::Token(new mymath::InfoLog<2,mymath::TokenType>(arr), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
           }
         }
         break;
@@ -281,7 +304,7 @@ namespace mymath
       default:
       {
         mymath::TokenType arr[] = {a.type,b.type};
-        return mymath::Token(std::make_shared<mymath::InfoLog<2,mymath::TokenType>>(arr), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
+        return mymath::Token(new mymath::InfoLog<2,mymath::TokenType>(arr), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
       }
     }
   

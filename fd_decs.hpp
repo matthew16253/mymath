@@ -96,48 +96,48 @@ namespace mymath
   };
 
 
-
   class Token
   {
     public:
-      std::shared_ptr<void> dataptr;
+      void* dataptr;
       TokenType type;
       Token();
-      Token(std::shared_ptr<void> _dataptr,TokenType _type);
+      Token(void* _dataptr,TokenType _type);
       ~Token();
-      Token(const Token& other, MoveTag);
-      Token(const Token& other, CopyTag);
+      Token(const Token& other);
       Token(Token&& other);
       Token& operator=(const Token& other);
       Token& operator=(Token&& other);
+      void empty();
   };
 
   
   class ExpressionTreeNode
   {
     public:
-      std::vector<std::shared_ptr<ExpressionTreeNode>> children;
+      std::vector<ExpressionTreeNode*> children;
       Token data;
       ExpressionTreeNode();
-      ExpressionTreeNode(Token _data, MoveTag);
-      ExpressionTreeNode(const ExpressionTreeNode& other, CopyTag);
+      ExpressionTreeNode(const Token& _data);
+      ExpressionTreeNode(Token&& _data);
+      ExpressionTreeNode(const ExpressionTreeNode& other);
       ExpressionTreeNode(ExpressionTreeNode&& other);
       ExpressionTreeNode& operator=(const ExpressionTreeNode& other);
   };
 }
 
-void applyBinaryOperation(std::shared_ptr<mymath::ExpressionTreeNode>& tree, mymath::TokenType op, const mymath::Token& other);
-void applyBinaryOperation(const mymath::Token& other, mymath::TokenType op, std::shared_ptr<mymath::ExpressionTreeNode>& tree);
-void applyBinaryOperation(std::shared_ptr<mymath::ExpressionTreeNode>& tree, mymath::TokenType op, std::shared_ptr<mymath::ExpressionTreeNode>& other);
-void applyUnaryOperation(std::shared_ptr<mymath::ExpressionTreeNode>& tree, mymath::TokenType op);
+void applyBinaryOperation(mymath::ExpressionTreeNode*& tree, mymath::TokenType op, const mymath::Token& other);
+void applyBinaryOperation(const mymath::Token& other, mymath::TokenType op, mymath::ExpressionTreeNode*& tree);
+void applyBinaryOperation(mymath::ExpressionTreeNode*& tree, mymath::TokenType op, mymath::ExpressionTreeNode*& other);
+void applyUnaryOperation(mymath::ExpressionTreeNode*& tree, mymath::TokenType op);
 
-void formatArithmeticChains(std::shared_ptr<mymath::ExpressionTreeNode>& tree);
+void formatArithmeticChains(mymath::ExpressionTreeNode*& tree);
 
-void formatAddSubChain(std::shared_ptr<mymath::ExpressionTreeNode>& tree);
-void getAddSubNodes(std::shared_ptr<mymath::ExpressionTreeNode>& currentNode,std::vector<std::shared_ptr<mymath::ExpressionTreeNode>>& currentAddNodes, std::vector<std::shared_ptr<mymath::ExpressionTreeNode>>& currentSubNodes, mymath::TokenType aboveNodeType = mymath::TokenType::DT_UNINIT);
+void formatAddSubChain(mymath::ExpressionTreeNode*& tree);
+void getAddSubNodes(mymath::ExpressionTreeNode*& currentNode,std::vector<mymath::ExpressionTreeNode*>& currentAddNodes, std::vector<mymath::ExpressionTreeNode*>& currentSubNodes, mymath::TokenType aboveNodeType = mymath::TokenType::DT_UNINIT);
 
-void formatMulDivChain(std::shared_ptr<mymath::ExpressionTreeNode>& tree, bool aboveIsNumerator = true);
-void getMulDivNodes(std::shared_ptr<mymath::ExpressionTreeNode>& currentNode,std::vector<std::shared_ptr<mymath::ExpressionTreeNode>>& currentNumeratorNodes, std::vector<std::shared_ptr<mymath::ExpressionTreeNode>>& currentDenominatorNodes, bool aboveIsNumerator = true);
+void formatMulDivChain(mymath::ExpressionTreeNode*& tree, bool aboveIsNumerator = true);
+void getMulDivNodes(mymath::ExpressionTreeNode*& currentNode,std::vector<mymath::ExpressionTreeNode*>& currentNumeratorNodes, std::vector<mymath::ExpressionTreeNode*>& currentDenominatorNodes, bool aboveIsNumerator = true);
 
 
 
