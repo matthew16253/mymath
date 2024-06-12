@@ -1,0 +1,2 @@
+Matrix/Vector:
+  All of the matrices and vector manage their own memory, meaning that they delete their data within their destructors. There should be nothing to worry about.
