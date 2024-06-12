@@ -12,7 +12,7 @@
 
 
 
-void formatArithmeticChains(std::shared_ptr<mymath::ExpressionTreeNode>& tree)
+void formatArithmeticChains(mymath::ExpressionTreeNode*& tree)
 {
   if(tree->data.type==mymath::TokenType::OP_ADD || tree->data.type==mymath::TokenType::OP_SUBTRACT)
   {
@@ -31,11 +31,11 @@ void formatArithmeticChains(std::shared_ptr<mymath::ExpressionTreeNode>& tree)
   }
 }
 
-void formatAddSubChain(std::shared_ptr<mymath::ExpressionTreeNode>& tree) //given that:   tree->data.type == OP_ADD || OP_SUBTRACT
+void formatAddSubChain(mymath::ExpressionTreeNode*& tree) //given that:   tree->data.type == OP_ADD || OP_SUBTRACT
 {
-  std::vector<std::shared_ptr<mymath::ExpressionTreeNode>> addNodes, subNodes;
+  std::vector<mymath::ExpressionTreeNode*> addNodes, subNodes;
   getAddSubNodes(tree,addNodes,subNodes);
-  std::shared_ptr<mymath::ExpressionTreeNode> new_tree;
+  mymath::ExpressionTreeNode* new_tree;
   if(addNodes.size() > 1){formatArithmeticChains(addNodes.front());new_tree = addNodes.front();}
   else{formatArithmeticChains(subNodes.front());new_tree = subNodes.front();}
   // add all items in list to + chain, as well as -chain
@@ -51,7 +51,7 @@ void formatAddSubChain(std::shared_ptr<mymath::ExpressionTreeNode>& tree) //give
   }
   tree = new_tree;
 }
-void getAddSubNodes(std::shared_ptr<mymath::ExpressionTreeNode>& currentNode,std::vector<std::shared_ptr<mymath::ExpressionTreeNode>>& currentAddNodes, std::vector<std::shared_ptr<mymath::ExpressionTreeNode>>& currentSubNodes, mymath::TokenType aboveNodeType = mymath::TokenType::DT_UNINIT)
+void getAddSubNodes(mymath::ExpressionTreeNode*& currentNode,std::vector<mymath::ExpressionTreeNode*>& currentAddNodes, std::vector<mymath::ExpressionTreeNode*>& currentSubNodes, mymath::TokenType aboveNodeType = mymath::TokenType::DT_UNINIT)
 {
   if(currentNode->data.type != mymath::TokenType::OP_ADD && currentNode->data.type != mymath::TokenType::OP_SUBTRACT && aboveNodeType == mymath::TokenType::OP_ADD){currentAddNodes.push_back(currentNode);}
   else if(currentNode->data.type != mymath::TokenType::OP_ADD && currentNode->data.type != mymath::TokenType::OP_SUBTRACT && aboveNodeType == mymath::TokenType::OP_SUBTRACT){currentSubNodes.push_back(currentNode);}
@@ -62,12 +62,11 @@ void getAddSubNodes(std::shared_ptr<mymath::ExpressionTreeNode>& currentNode,std
   }
 }
 
-void formatMulDivChain(std::shared_ptr<mymath::ExpressionTreeNode>& tree, bool aboveIsNumerator = true)
+void formatMulDivChain(mymath::ExpressionTreeNode*& tree, bool aboveIsNumerator = true)
 {
-  std::vector<std::shared_ptr<mymath::ExpressionTreeNode>> numeratorNodes, denominatorNodes;
+  std::vector<mymath::ExpressionTreeNode*> numeratorNodes, denominatorNodes;
   getMulDivNodes(tree,numeratorNodes,denominatorNodes,aboveIsNumerator);
-
-  std::shared_ptr<mymath::ExpressionTreeNode> new_numeratorTree, new_denominatorTree, new_tree;
+  mymath::ExpressionTreeNode* new_numeratorTree, *new_denominatorTree, *new_tree;
 
   formatArithmeticChains(numeratorNodes.at(0));
   new_numeratorTree =  numeratorNodes.at(0);
@@ -94,7 +93,7 @@ void formatMulDivChain(std::shared_ptr<mymath::ExpressionTreeNode>& tree, bool a
   tree = new_tree;
 }
 
-void getMulDivNodes(std::shared_ptr<mymath::ExpressionTreeNode>& currentNode,std::vector<std::shared_ptr<mymath::ExpressionTreeNode>>& currentNumeratorNodes, std::vector<std::shared_ptr<mymath::ExpressionTreeNode>>& currentDenominatorNodes, bool aboveIsNumerator = true)
+void getMulDivNodes(mymath::ExpressionTreeNode*& currentNode,std::vector<mymath::ExpressionTreeNode*>& currentNumeratorNodes, std::vector<mymath::ExpressionTreeNode*>& currentDenominatorNodes, bool aboveIsNumerator = true)
 {
   if(currentNode->data.type != mymath::TokenType::OP_MULTIPLY && currentNode->data.type != mymath::TokenType::OP_DIVIDE && aboveIsNumerator){currentNumeratorNodes.push_back(currentNode);}
   else if(currentNode->data.type != mymath::TokenType::OP_MULTIPLY && currentNode->data.type != mymath::TokenType::OP_DIVIDE && !aboveIsNumerator){currentDenominatorNodes.push_back(currentNode);}
