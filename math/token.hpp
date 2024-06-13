@@ -101,7 +101,7 @@ namespace mymath
           }
           case mymath::TokenType::DT_COMPLEX:
           {
-            *static_cast<std::complex<mymath::Token>*>(b.dataptr) += a;
+            *static_cast<std::complex<mymath::Token>*>(b.dataptr) = *static_cast<std::complex<mymath::Token>*>(b.dataptr) + a;
             return mymath::Token(b.dataptr  ,  mymath::TokenType::DT_COMPLEX);
             break;
           }
@@ -129,13 +129,13 @@ namespace mymath
         {
           case mymath::TokenType::DT_REAL:
           {
-            *complex_a_ptr += b;
+            *complex_a_ptr = *complex_a_ptr + b;
             return mymath::Token(a.dataptr  ,  mymath::TokenType::DT_COMPLEX);
             break;
           }
           case mymath::TokenType::DT_COMPLEX:
           {
-            *complex_a_ptr += *static_cast<std::complex<mymath::Token>*>(b.dataptr);
+            *complex_a_ptr = *complex_a_ptr + *static_cast<std::complex<mymath::Token>*>(b.dataptr);
             return mymath::Token(a.dataptr  ,  mymath::TokenType::DT_COMPLEX);
             break;
           }
@@ -169,7 +169,7 @@ namespace mymath
             }
             else
             {
-              *vector_a_ptr += *vector_b_ptr;
+              *vector_a_ptr = *vector_a_ptr + *vector_b_ptr;
               return mymath::Token(a.dataptr  ,  mymath::TokenType::DT_VECTOR);
             }
             break;
@@ -185,7 +185,7 @@ namespace mymath
             }
             else
             {
-              *matrix_b_ptr += *vector_a_ptr;
+              *matrix_b_ptr = *matrix_b_ptr + *vector_a_ptr;
               return mymath::Token(b.dataptr  ,  mymath::TokenType::DT_MATRIX);
             }
             break;
@@ -221,7 +221,7 @@ namespace mymath
             }
             else
             {
-              *matrix_a_ptr += *vector_b_ptr;
+              *matrix_a_ptr = *matrix_a_ptr + *vector_b_ptr;
               return mymath::Token(a.dataptr  ,  mymath::TokenType::DT_MATRIX);
             }
             break;
@@ -237,7 +237,7 @@ namespace mymath
             }
             else
             {
-              *matrix_a_ptr += *matrix_b_ptr;
+              *matrix_a_ptr = *matrix_a_ptr + *matrix_b_ptr;
               return mymath::Token(a.dataptr  ,  mymath::TokenType::DT_MATRIX);
             }
             break;

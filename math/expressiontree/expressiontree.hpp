@@ -27,17 +27,19 @@ namespace mymath
       }
   ExpressionTreeNode& ExpressionTreeNode::operator=(const ExpressionTreeNode& other)
       {
-        //data = other.data;
-        //children = other.children;
         data = other.data;
         children = std::vector<ExpressionTreeNode*>();
         for(int i = 0; i < other.children.size(); i++)
         {
-          children.push_back(new ExpressionTreeNode(*other.children.at(i)));
+          children.at(i) = new ExpressionTreeNode(*other.children.at(i));
         }
         return *this;
       }
-  
+  ExpressionTreeNode& ExpressionTreeNode::operator=(ExpressionTreeNode&& other)
+      {
+        data = other.data;
+        children = other.children;
+      }
 }
 
 #include<math/expressiontree/basic_ops.hpp>

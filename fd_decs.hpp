@@ -123,6 +123,7 @@ namespace mymath
       ExpressionTreeNode(const ExpressionTreeNode& other);
       ExpressionTreeNode(ExpressionTreeNode&& other);
       ExpressionTreeNode& operator=(const ExpressionTreeNode& other);
+      ExpressionTreeNode& operator=(ExpressionTreeNode&& other);
   };
 }
 
