@@ -168,6 +168,44 @@ mymath::matn<T> operator+(const mymath::matn<T>& a, const mymath::vecn<T>& b);
 
 
 
+
+
+
+
+
+// REDEFINE THESE FOR YOUR TOKEN CLASS
+
+
+  // template<typename _Tp>
+  //   inline _GLIBCXX20_CONSTEXPR complex<_Tp>
+  //   operator+(const complex<_Tp>& __x, const complex<_Tp>& __y)
+  //   {
+  //     complex<_Tp> __r = __x;
+  //     __r += __y;
+  //     return __r;
+  //   }
+
+  // template<typename _Tp>
+  //   inline _GLIBCXX20_CONSTEXPR complex<_Tp>
+  //   operator+(const complex<_Tp>& __x, const _Tp& __y)
+  //   {
+  //     complex<_Tp> __r = __x;
+  //     __r += __y;
+  //     return __r;
+  //   }
+
+  // template<typename _Tp>
+  //   inline _GLIBCXX20_CONSTEXPR complex<_Tp>
+  //   operator+(const _Tp& __x, const complex<_Tp>& __y)
+  //   {
+  //     complex<_Tp> __r = __y;
+  //     __r += __x;
+  //     return __r;
+  //   }
+
+
+
+
 #include"math/matvec/vec.hpp"
 #include"math/matvec/mat.hpp"
 #include"math/token.hpp"
