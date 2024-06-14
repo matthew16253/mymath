@@ -5,7 +5,7 @@
 #include<iostream>
 
 
-#include<fd_decs.hpp>
+#include"../../fd_decs.hpp"
 
 namespace mymath
 {
@@ -45,7 +45,7 @@ namespace mymath
     return *this;
   }
   template<typename T>
-  matn<T>& matn<T>::operator=(const matn<T>&& other)
+  matn<T>& matn<T>::operator=(matn<T>&& other)
   {
     delete[] data;
     width = other.width;
@@ -69,22 +69,22 @@ namespace mymath
   {
     return data + y*width;
   }
-  template<typename T>
-  void matn<T>::operator+=(matn<T> other)
-  {
-    for(int i = 0; i < width*height; i++)
-    {
-      data[i] += other.at(i);
-    }
-  }
-  template<typename T>
-  void matn<T>::operator+=(vecn<T> other)
-  {
-    for(int i = 0; i < height; i++)
-    {
-      data[i] += other.at(i);
-    }
-  }
+  // template<typename T>
+  // void matn<T>::operator+=(matn<T> other)
+  // {
+  //   for(int i = 0; i < width*height; i++)
+  //   {
+  //     data[i] += other.at(i);
+  //   }
+  // }
+  // template<typename T>
+  // void matn<T>::operator+=(vecn<T> other)
+  // {
+  //   for(int i = 0; i < height; i++)
+  //   {
+  //     data[i] += other.at(i);
+  //   }
+  // }
 }
 
 #endif

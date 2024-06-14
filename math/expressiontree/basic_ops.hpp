@@ -1,7 +1,7 @@
 #ifndef EXPR_BASIC_OPS_HPP
 #define EXPR_BASIC_OPS_HPP
 
-#include<fd_decs.hpp>
+#include"../../fd_decs.hpp"
 #include<memory>
 
 void applyBinaryOperation(mymath::ExpressionTreeNode*& tree, mymath::TokenType op, const mymath::Token& other)

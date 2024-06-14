@@ -4,7 +4,7 @@
 #include<algorithm>
 #include<iostream>
 
-#include<fd_decs.hpp>
+#include"../../fd_decs.hpp"
 
 namespace mymath
 {
@@ -40,7 +40,7 @@ namespace mymath
     return *this;
   }
   template<typename T>
-  vecn<T>& vecn<T>::operator=(const vecn<T>&& other)
+  vecn<T>& vecn<T>::operator=(vecn<T>&& other)
   {
     delete[] data;
     height = other.height;
@@ -53,14 +53,14 @@ namespace mymath
   {
     return data[index];
   }
-  template<typename T>
-  void vecn<T>::operator+=(vecn<T> other)
-  {
-    for(int i = 0; i < other.height; i++)
-    {
-      data[i] += other.at(i);
-    }
-  }
+  // template<typename T>
+  // void vecn<T>::operator+=(vecn<T> other)
+  // {
+  //   for(int i = 0; i < other.height; i++)
+  //   {
+  //     data[i] += other.at(i);
+  //   }
+  // }
 }
 
 

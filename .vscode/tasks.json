@@ -4,14 +4,9 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "echo",
-      "type": "shell",
-      "command": "echo Hello"
-    },
-    {
       "type": "cppbuild",
-      "label": "C/C++: g++.exe build active file",
-      "command": "C:\\MinGW\\bin\\g++.exe",
+      "label": "C/C++: g++.exe build active file USE THIS ONE",
+      "command": "C:\\msys64\\ucrt64\\bin\\g++.exe",
       "args": [
         "-fdiagnostics-color=always",
         "-g",
@@ -20,13 +15,13 @@
         "${fileDirname}\\${fileBasenameNoExtension}.exe"
       ],
       "options": {
-        "cwd": "C:\\MinGW\\bin"
+        //"cwd": "C:\\MinGW\\bin"
       },
       "problemMatcher": [
         "$gcc"
       ],
       "group": "build",
-      "detail": "compiler: C:\\MinGW\\bin\\g++.exe"
+      "detail": "compiler: C:\\msys\\ucrt64\\bin\\g++.exe"
     }
   ]
 }

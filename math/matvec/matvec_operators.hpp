@@ -1,7 +1,7 @@
 #ifndef MATVECFUNCTION_HPP
 #define MATVECFUNCTION_HPP
 
-#include<fd_decs.hpp>
+#include"../../fd_decs.hpp"
 
 #include<iostream>
 
@@ -100,7 +100,7 @@ mymath::matn<T> operator+(const mymath::matn<T>& a, const mymath::matn<T>& b)
 template<typename T>
 mymath::matn<T> operator+(const mymath::matn<T>& a, const mymath::vecn<T>& b)
 {
-  mymath::vecn<T> c(a.height);
+  mymath::matn<T> c(1,a.height);
   for(int i = 0; i < a.height; i++)
   {
     c.data[i] = a.data[i] + b.data[i];

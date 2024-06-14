@@ -1,7 +1,7 @@
 #ifndef EXPR_HPP
 #define EXPR_HPP
 
-#include<fd_decs.hpp>
+#include"../../fd_decs.hpp"
 
 #include<vector>
 
@@ -39,10 +39,11 @@ namespace mymath
       {
         data = other.data;
         children = other.children;
+        return *this;
       }
 }
 
-#include<math/expressiontree/basic_ops.hpp>
-#include<math/expressiontree/arith_chain_formatting.hpp>
+#include"basic_ops.hpp"
+#include"arith_chain_formatting.hpp"
 
 #endif

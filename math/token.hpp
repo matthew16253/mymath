@@ -2,8 +2,9 @@
 #define TOKEN_HPP
 
 #include<complex>
+#include<type_traits>
 
-#include<fd_decs.hpp>
+#include"../fd_decs.hpp"
 
 namespace mymath
 {
@@ -21,6 +22,7 @@ namespace mymath
       default:  {}
     }
   }
+
   Token::Token(const Token& other)  :  type(other.type)
   {
     switch(other.type)
@@ -84,8 +86,11 @@ namespace mymath
     type = DT_UNINIT;
   }
 }
-  mymath::Token operator+(mymath::Token& a, mymath::Token& b) // DO NOT USE THE INPUTTED TOKENS
+  mymath::Token operator+(mymath::Token&& a, mymath::Token&& b) // DO NOT USE THE INPUTTED TOKENS
   {
+    mymath::Token new_token;
+
+
     switch(a.type)
     {
       case mymath::TokenType::DT_REAL:
@@ -96,28 +101,37 @@ namespace mymath
           case mymath::TokenType::DT_REAL:
           {
             *real_a_ptr += *static_cast<long double*>(b.dataptr);
-            return mymath::Token(a.dataptr  ,  mymath::TokenType::DT_REAL);
+            new_token = mymath::Token(a.dataptr  ,  mymath::TokenType::DT_REAL);
+            a.empty();
+            b.empty();
             break;
           }
           case mymath::TokenType::DT_COMPLEX:
           {
-            *static_cast<std::complex<mymath::Token>*>(b.dataptr) = *static_cast<std::complex<mymath::Token>*>(b.dataptr) + a;
-            return mymath::Token(b.dataptr  ,  mymath::TokenType::DT_COMPLEX);
+            *static_cast<std::complex<mymath::Token>*>(b.dataptr) = a + *static_cast<std::complex<mymath::Token>*>(b.dataptr);
+            new_token = mymath::Token(b.dataptr  ,  mymath::TokenType::DT_COMPLEX);
+            a.empty();
+            b.empty();
             break;
           }
           case mymath::TokenType::DT_ALGEBRAIC_EXPR:
           {
-            //return mymath::Token(new mymath::ExpressionTreeNode(a + *std::static_pointer_cast<mymath::ExpressionTreeNode*>(b.dataptr))  ,  mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            //new_token = mymath::Token(new mymath::ExpressionTreeNode(a + *std::static_pointer_cast<mymath::ExpressionTreeNode*>(b.dataptr))  ,  mymath::TokenType::DT_ALGEBRAIC_EXPR);
             // KEY EXMAPLE ON HOW TO USE THE EXPR TREE
             mymath::ExpressionTreeNode* new_tree = static_cast<mymath::ExpressionTreeNode*>(b.dataptr);
             applyBinaryOperation(new_tree,mymath::TokenType::OP_ADD,a);
-            return mymath::Token(new_tree,mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            new_token = mymath::Token(new_tree,mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            a.empty();
+            b.empty();
             break;
           }
           default:
           {
             mymath::TokenType arr[] = {a.type,b.type};
-            return mymath::Token(static_cast<void*>(new mymath::InfoLog<2,mymath::TokenType>(arr)),mymath::TokenType::ERROR_INVALID_2_OPERANDS);
+            new_token = mymath::Token(static_cast<void*>(new mymath::InfoLog<2,mymath::TokenType>(arr)),mymath::TokenType::ERROR_INVALID_2_OPERANDS);
+            a.empty();
+            b.empty();
+            break;
           }
         }
         break;
@@ -129,27 +143,36 @@ namespace mymath
         {
           case mymath::TokenType::DT_REAL:
           {
-            *complex_a_ptr = *complex_a_ptr + b;
-            return mymath::Token(a.dataptr  ,  mymath::TokenType::DT_COMPLEX);
+            *complex_a_ptr = b + *complex_a_ptr;
+            new_token = mymath::Token(a.dataptr  ,  mymath::TokenType::DT_COMPLEX);
+            a.empty();
+            b.empty();
             break;
           }
           case mymath::TokenType::DT_COMPLEX:
           {
-            *complex_a_ptr = *complex_a_ptr + *static_cast<std::complex<mymath::Token>*>(b.dataptr);
-            return mymath::Token(a.dataptr  ,  mymath::TokenType::DT_COMPLEX);
+            *complex_a_ptr = *static_cast<std::complex<mymath::Token>*>(b.dataptr) + *complex_a_ptr;
+            new_token = mymath::Token(a.dataptr  ,  mymath::TokenType::DT_COMPLEX);
+            a.empty();
+            b.empty();
             break;
           }
           case mymath::TokenType::DT_ALGEBRAIC_EXPR:
           {
             mymath::ExpressionTreeNode* new_tree = static_cast<mymath::ExpressionTreeNode*>(b.dataptr);
             applyBinaryOperation(new_tree,mymath::TokenType::OP_ADD,a);
-            return mymath::Token(new_tree,mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            new_token = mymath::Token(new_tree,mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            a.empty();
+            b.empty();
             break;
           }
           default:
           {
             mymath::TokenType arr[] = {a.type, b.type};
-            return mymath::Token(static_cast<void*>(new mymath::InfoLog<2,mymath::TokenType>(arr)), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
+            new_token = mymath::Token(static_cast<void*>(new mymath::InfoLog<2,mymath::TokenType>(arr)), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
+            a.empty();
+            b.empty();
+            break;
           }
         }
         break;
@@ -165,12 +188,18 @@ namespace mymath
             if(vector_a_ptr->height != vector_b_ptr->height)
             {
               int arr[] = {vector_a_ptr->height,vector_b_ptr->height};
-              return mymath::Token(new mymath::InfoLog<2,int>(arr), mymath::TokenType::ERROR_INVALID_VEC_DIMS);
+              new_token = mymath::Token(new mymath::InfoLog<2,int>(arr), mymath::TokenType::ERROR_INVALID_VEC_DIMS);
+              a.empty();
+              b.empty();
+              break;
             }
             else
             {
               *vector_a_ptr = *vector_a_ptr + *vector_b_ptr;
-              return mymath::Token(a.dataptr  ,  mymath::TokenType::DT_VECTOR);
+              new_token = mymath::Token(a.dataptr  ,  mymath::TokenType::DT_VECTOR);
+              a.empty();
+              b.empty();
+              break;
             }
             break;
           }
@@ -181,26 +210,36 @@ namespace mymath
             {
               mymath::MatDimension arr[] = {mymath::MatDimension(vector_a_ptr->height,1) ,
                 mymath::MatDimension(matrix_b_ptr->width,matrix_b_ptr->height)};
-              return mymath::Token(new mymath::InfoLog<2,mymath::MatDimension>(arr)  ,  mymath::TokenType::ERROR_INVALID_MAT_DIMS);
+              new_token = mymath::Token(new mymath::InfoLog<2,mymath::MatDimension>(arr)  ,  mymath::TokenType::ERROR_INVALID_MAT_DIMS);
+              a.empty();
+              b.empty();
+              break;
             }
             else
             {
               *matrix_b_ptr = *matrix_b_ptr + *vector_a_ptr;
-              return mymath::Token(b.dataptr  ,  mymath::TokenType::DT_MATRIX);
+              new_token = mymath::Token(b.dataptr  ,  mymath::TokenType::DT_MATRIX);
+              a.empty();
+              b.empty();
+              break;
             }
-            break;
           }
           case mymath::TokenType::DT_ALGEBRAIC_EXPR:
           {
             mymath::ExpressionTreeNode* new_tree = static_cast<mymath::ExpressionTreeNode*>(b.dataptr);
             applyBinaryOperation(new_tree,mymath::TokenType::OP_ADD,a);
-            return mymath::Token(new_tree, mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            new_token = mymath::Token(new_tree, mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            a.empty();
+            b.empty();
             break;
           }
           default:
           {
             mymath::TokenType arr[] = {a.type,b.type};
-            return mymath::Token(new mymath::InfoLog<2,mymath::TokenType>(arr), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
+            new_token = mymath::Token(new mymath::InfoLog<2,mymath::TokenType>(arr), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
+            a.empty();
+            b.empty();
+            break;
           }
         }
         break;
@@ -217,14 +256,19 @@ namespace mymath
             {
               mymath::MatDimension arr[] = {mymath::MatDimension(matrix_a_ptr->width,matrix_a_ptr->height) ,
                 mymath::MatDimension(vector_b_ptr->height,1)};
-              return mymath::Token(new mymath::InfoLog<2,mymath::MatDimension>(arr)  ,  mymath::TokenType::ERROR_INVALID_MAT_DIMS);
+              new_token = mymath::Token(new mymath::InfoLog<2,mymath::MatDimension>(arr)  ,  mymath::TokenType::ERROR_INVALID_MAT_DIMS);
+              a.empty();
+              b.empty();
+              break;
             }
             else
             {
               *matrix_a_ptr = *matrix_a_ptr + *vector_b_ptr;
-              return mymath::Token(a.dataptr  ,  mymath::TokenType::DT_MATRIX);
+              new_token = mymath::Token(a.dataptr  ,  mymath::TokenType::DT_MATRIX);
+              a.empty();
+              b.empty();
+              break;
             }
-            break;
           }
           case mymath::TokenType::DT_MATRIX:
           {
@@ -233,26 +277,36 @@ namespace mymath
             {
               mymath::MatDimension arr[] = {mymath::MatDimension(matrix_a_ptr->width,matrix_a_ptr->height) ,
                 mymath::MatDimension(matrix_b_ptr->width,matrix_b_ptr->height)};
-              return mymath::Token(new mymath::InfoLog<2,mymath::MatDimension>(arr)  ,  mymath::TokenType::ERROR_INVALID_MAT_DIMS);
+              new_token = mymath::Token(new mymath::InfoLog<2,mymath::MatDimension>(arr)  ,  mymath::TokenType::ERROR_INVALID_MAT_DIMS);
+              a.empty();
+              b.empty();
+              break;
             }
             else
             {
               *matrix_a_ptr = *matrix_a_ptr + *matrix_b_ptr;
-              return mymath::Token(a.dataptr  ,  mymath::TokenType::DT_MATRIX);
+              new_token = mymath::Token(a.dataptr  ,  mymath::TokenType::DT_MATRIX);
+              a.empty();
+              b.empty();
+              break;
             }
-            break;
           }
           case mymath::TokenType::DT_ALGEBRAIC_EXPR:
           {
             mymath::ExpressionTreeNode* new_tree = static_cast<mymath::ExpressionTreeNode*>(b.dataptr);
             applyBinaryOperation(new_tree,mymath::TokenType::OP_ADD,a);
-            return mymath::Token(new_tree, mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            new_token = mymath::Token(new_tree, mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            a.empty();
+            b.empty();
             break;
           }
           default:
           {
             mymath::TokenType arr[] = {a.type,b.type};
-            return mymath::Token(new mymath::InfoLog<2,mymath::TokenType>(arr), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
+            new_token = mymath::Token(new mymath::InfoLog<2,mymath::TokenType>(arr), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
+            a.empty();
+            b.empty();
+            break;
           }
         }
         break;
@@ -265,38 +319,51 @@ namespace mymath
           case mymath::TokenType::DT_REAL:
           {
             applyBinaryOperation(new_tree, mymath::TokenType::OP_ADD, b);
-            return mymath::Token(new_tree  ,  mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            new_token = mymath::Token(new_tree  ,  mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            a.empty();
+            b.empty();
             break;
           }
           case mymath::TokenType::DT_COMPLEX:
           {
             applyBinaryOperation(new_tree, mymath::TokenType::OP_ADD, b);
-            return mymath::Token(new_tree  ,  mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            new_token = mymath::Token(new_tree  ,  mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            a.empty();
+            b.empty();
             break;
           }
           case mymath::TokenType::DT_VECTOR:
           {
             applyBinaryOperation(new_tree, mymath::TokenType::OP_ADD, b);
-            return mymath::Token(new_tree  ,  mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            new_token = mymath::Token(new_tree  ,  mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            a.empty();
+            b.empty();
             break;
           }
           case mymath::TokenType::DT_MATRIX:
           {
             applyBinaryOperation(new_tree, mymath::TokenType::OP_ADD, b);
-            return mymath::Token(new_tree  ,  mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            new_token = mymath::Token(new_tree  ,  mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            a.empty();
+            b.empty();
             break;
           }
           case mymath::TokenType::DT_ALGEBRAIC_EXPR:
           {
             mymath::ExpressionTreeNode* tree_b_ptr = static_cast<mymath::ExpressionTreeNode*>(b.dataptr);
             applyBinaryOperation(new_tree, mymath::TokenType::OP_ADD, tree_b_ptr);
-            return mymath::Token(new_tree  ,  mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            new_token = mymath::Token(new_tree  ,  mymath::TokenType::DT_ALGEBRAIC_EXPR);
+            a.empty();
+            b.empty();
             break;
           }
           default:
           {
             mymath::TokenType arr[] = {a.type,b.type};
-            return mymath::Token(new mymath::InfoLog<2,mymath::TokenType>(arr), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
+            new_token = mymath::Token(new mymath::InfoLog<2,mymath::TokenType>(arr), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
+            a.empty();
+            b.empty();
+            break;
           }
         }
         break;
@@ -304,10 +371,13 @@ namespace mymath
       default:
       {
         mymath::TokenType arr[] = {a.type,b.type};
-        return mymath::Token(new mymath::InfoLog<2,mymath::TokenType>(arr), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
+        new_token = mymath::Token(new mymath::InfoLog<2,mymath::TokenType>(arr), mymath::TokenType::ERROR_INVALID_2_OPERANDS);
+        a.empty();
+        b.empty();
+        break;
       }
     }
-  
+  return new_token;
 }
 
 #endif

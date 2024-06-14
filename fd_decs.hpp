@@ -51,12 +51,12 @@ namespace mymath
       matn(matn<T>&& other);
       ~matn();
       matn<T>& operator=(const matn<T>& other);
-      matn<T>& operator=(const matn<T>&& other);
+      matn<T>& operator=(matn<T>&& other);
       T& at(int index) const;
       T& at(int x, int y) const;
       T* row_at(int y) const;
-      void operator+=(matn<T> other);
-      void operator+=(vecn<T> other);
+      //void operator+=(matn<T> other);
+      //void operator+=(vecn<T> other);
   };
 
   template<typename T>
@@ -71,9 +71,9 @@ namespace mymath
       vecn(vecn<T>&& other);
       ~vecn();
       vecn<T>& operator=(const vecn<T>& other);
-      vecn<T>& operator=(const vecn<T>&& other);
+      vecn<T>& operator=(vecn<T>&& other);
       T& at(int index) const;
-      void operator+=(vecn<T> other);
+      //void operator+=(vecn<T> other);
 
   };
 
@@ -103,6 +103,7 @@ namespace mymath
       TokenType type;
       Token();
       Token(void* _dataptr,TokenType _type);
+
       ~Token();
       Token(const Token& other);
       Token(Token&& other);
@@ -167,10 +168,10 @@ mymath::matn<T> operator+(const mymath::matn<T>& a, const mymath::vecn<T>& b);
 
 
 
-#include<math/matvec/vec.hpp>
-#include<math/matvec/mat.hpp>
-#include<math/token.hpp>
-#include<math/matvec/matvec_operators.hpp>
-#include<math/expressiontree/expressiontree.hpp>
+#include"math/matvec/vec.hpp"
+#include"math/matvec/mat.hpp"
+#include"math/token.hpp"
+#include"math/matvec/matvec_operators.hpp"
+#include"math/expressiontree/expressiontree.hpp"
 
 #endif
