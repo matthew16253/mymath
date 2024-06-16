@@ -31,21 +31,9 @@ namespace mymath
     delete[] data;
   }
   template<typename T>
-  vecn<T>& vecn<T>::operator=(const vecn<T>& other)
+  vecn<T>& vecn<T>::operator=(vecn<T> other)
   {
-    delete[] data;
-    height = other.height;
-    data = new T[other.height];
-    std::copy(other.data, other.data+other.height, data);
-    return *this;
-  }
-  template<typename T>
-  vecn<T>& vecn<T>::operator=(vecn<T>&& other)
-  {
-    delete[] data;
-    height = other.height;
-    data = other.data;
-    other.data = nullptr;
+    swap(*this,other);
     return *this;
   }
   template<typename T>
@@ -53,14 +41,6 @@ namespace mymath
   {
     return data[index];
   }
-  // template<typename T>
-  // void vecn<T>::operator+=(vecn<T> other)
-  // {
-  //   for(int i = 0; i < other.height; i++)
-  //   {
-  //     data[i] += other.at(i);
-  //   }
-  // }
 }
 
 

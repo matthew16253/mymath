@@ -4,16 +4,12 @@
 #include<vector>
 #include<algorithm>
 #include<memory>
+#include<complex>
 
 
 
 namespace mymath
 {
-  struct CopyTag{};
-  struct MoveTag{};
-
-
-
   class ExpressionTreeNode;
   class Token;
   
@@ -50,13 +46,14 @@ namespace mymath
       matn(const matn<T>& other);
       matn(matn<T>&& other);
       ~matn();
-      matn<T>& operator=(const matn<T>& other);
-      matn<T>& operator=(matn<T>&& other);
+      matn<T>& operator=(matn<T> other);
       T& at(int index) const;
       T& at(int x, int y) const;
       T* row_at(int y) const;
-      //void operator+=(matn<T> other);
-      //void operator+=(vecn<T> other);
+      void operator+=(const matn<T>& other);
+      void operator+=(const vecn<T>& other);
+      void operator-=(const matn<T>& other);
+      void operator-=(const vecn<T>& other);
   };
 
   template<typename T>
@@ -70,10 +67,12 @@ namespace mymath
       vecn(const vecn<T>& other);
       vecn(vecn<T>&& other);
       ~vecn();
-      vecn<T>& operator=(const vecn<T>& other);
-      vecn<T>& operator=(vecn<T>&& other);
+      vecn<T>& operator=(vecn<T> other);
       T& at(int index) const;
-      //void operator+=(vecn<T> other);
+      void operator+=(const vecn<T>& other);
+      void operator+=(const matn<T>& other);
+      void operator-=(const vecn<T>& other);
+      void operator-=(const matn<T>& other);
 
   };
 
@@ -99,17 +98,29 @@ namespace mymath
   class Token
   {
     public:
-      void* dataptr;
+      union
+      {
+        void* dataptr;
+        long double* real_ptr;
+        std::complex<Token>* complex_ptr;
+        matn<Token>* mat_ptr;
+        vecn<Token>* vec_ptr;
+        ExpressionTreeNode* expr_ptr;
+      };
       TokenType type;
       Token();
       Token(void* _dataptr,TokenType _type);
+      //Token(TokenType _type);
 
       ~Token();
       Token(const Token& other);
       Token(Token&& other);
-      Token& operator=(const Token& other);
-      Token& operator=(Token&& other);
+      Token& operator=(Token other);
       void empty();
+
+      void operator+=(const Token& b);
+      void operator-=(const Token& b);
+      void operator*=(const Token& a);
   };
 
   
@@ -123,87 +134,86 @@ namespace mymath
       ExpressionTreeNode(Token&& _data);
       ExpressionTreeNode(const ExpressionTreeNode& other);
       ExpressionTreeNode(ExpressionTreeNode&& other);
-      ExpressionTreeNode& operator=(const ExpressionTreeNode& other);
-      ExpressionTreeNode& operator=(ExpressionTreeNode&& other);
+      ExpressionTreeNode& operator=(ExpressionTreeNode other);
   };
+
+  void applyBinaryOperation(mymath::ExpressionTreeNode*& tree, mymath::TokenType op, const mymath::Token& other);
+  void applyBinaryOperation(const mymath::Token& other, mymath::TokenType op, mymath::ExpressionTreeNode*& tree);
+  void applyBinaryOperation(mymath::ExpressionTreeNode*& tree, mymath::TokenType op, mymath::ExpressionTreeNode*& other);
+  void applyUnaryOperation(mymath::ExpressionTreeNode*& tree, mymath::TokenType op);
+
+  void formatArithmeticChains(mymath::ExpressionTreeNode*& tree);
+
+  void formatAddSubChain(mymath::ExpressionTreeNode*& tree);
+  void getAddSubNodes(mymath::ExpressionTreeNode*& currentNode,std::vector<mymath::ExpressionTreeNode*>& currentAddNodes, std::vector<mymath::ExpressionTreeNode*>& currentSubNodes, mymath::TokenType aboveNodeType = mymath::TokenType::DT_UNINIT);
+
+  void formatMulDivChain(mymath::ExpressionTreeNode*& tree, bool aboveIsNumerator = true);
+  void getMulDivNodes(mymath::ExpressionTreeNode*& currentNode,std::vector<mymath::ExpressionTreeNode*>& currentNumeratorNodes, std::vector<mymath::ExpressionTreeNode*>& currentDenominatorNodes, bool aboveIsNumerator = true);
+
+
+
+  mymath::Token operator+(const mymath::Token& a, const mymath::Token& b);
+  mymath::Token operator-(const mymath::Token& a, const mymath::Token& b);
+  mymath::Token operator-(const mymath::Token& a);
+  mymath::Token operator*(const mymath::Token& a, const mymath::Token& b);
+
+
+
+  template<typename T>
+  mymath::vecn<T> operator+(const mymath::vecn<T>& a, const mymath::vecn<T>& b);
+  template<typename T>
+  mymath::vecn<T> operator-(const mymath::vecn<T>& a, const mymath::vecn<T>& b);
+  template<typename T>
+  mymath::vecn<T> operator-(const mymath::vecn<T>& a);
+
+  template<typename T>
+  mymath::matn<T> operator+(const mymath::matn<T>& a, const mymath::matn<T>& b);
+  template<typename T>
+  mymath::matn<T> operator-(const mymath::matn<T>& a, const mymath::matn<T>& b);
+  template<typename T>
+  mymath::matn<T> operator-(const mymath::matn<T>& a);
+
+  template<typename T>
+  mymath::matn<T> operator*(const mymath::matn<T>& a, const mymath::matn<T>& b);
+  template<typename T>
+  mymath::matn<T> gaussianInverse(const mymath::matn<T>& a);
+
+  template<typename T>
+  mymath::vecn<T> operator*(const mymath::matn<T>& a, const mymath::vecn<T>& b);
+  template<typename T>
+  mymath::matn<T> operator+(const mymath::matn<T>& a, const mymath::vecn<T>& b);
+
+
+  template<typename T>
+  void swap(mymath::matn<T>& a, mymath::matn<T>& b)
+  {
+    std::swap(a.width,b.width);
+    std::swap(a.height,b.height);
+    std::swap(a.data,b.data);
+  }
+  template<typename T>
+  void swap(mymath::vecn<T>& a, mymath::vecn<T>& b)
+  {
+    std::swap(a.height,b.height);
+    std::swap(a.data,b.data);
+  }
+  void swap(mymath::Token& a, mymath::Token& b)
+  {
+    std::swap(a.dataptr,b.dataptr);
+    std::swap(a.type,b.type);
+  }
+  void swap(mymath::ExpressionTreeNode& a, mymath::ExpressionTreeNode& b)
+  {
+    swap(a.data,b.data);
+    std::swap(a.children,b.children);
+  }
+
+
 }
 
-void applyBinaryOperation(mymath::ExpressionTreeNode*& tree, mymath::TokenType op, const mymath::Token& other);
-void applyBinaryOperation(const mymath::Token& other, mymath::TokenType op, mymath::ExpressionTreeNode*& tree);
-void applyBinaryOperation(mymath::ExpressionTreeNode*& tree, mymath::TokenType op, mymath::ExpressionTreeNode*& other);
-void applyUnaryOperation(mymath::ExpressionTreeNode*& tree, mymath::TokenType op);
-
-void formatArithmeticChains(mymath::ExpressionTreeNode*& tree);
-
-void formatAddSubChain(mymath::ExpressionTreeNode*& tree);
-void getAddSubNodes(mymath::ExpressionTreeNode*& currentNode,std::vector<mymath::ExpressionTreeNode*>& currentAddNodes, std::vector<mymath::ExpressionTreeNode*>& currentSubNodes, mymath::TokenType aboveNodeType = mymath::TokenType::DT_UNINIT);
-
-void formatMulDivChain(mymath::ExpressionTreeNode*& tree, bool aboveIsNumerator = true);
-void getMulDivNodes(mymath::ExpressionTreeNode*& currentNode,std::vector<mymath::ExpressionTreeNode*>& currentNumeratorNodes, std::vector<mymath::ExpressionTreeNode*>& currentDenominatorNodes, bool aboveIsNumerator = true);
-
-
-
-mymath::Token operator+(mymath::Token& a, mymath::Token& b);
-
-
-template<typename T>
-mymath::vecn<T> operator+(const mymath::vecn<T>& a, const mymath::vecn<T>& b);
-template<typename T>
-mymath::vecn<T> operator-(const mymath::vecn<T>& a, const mymath::vecn<T>& b);
-
-
-template<typename T>
-mymath::matn<T> operator+(const mymath::matn<T>& a, const mymath::matn<T>& b);
-template<typename T>
-mymath::matn<T> operator-(const mymath::matn<T>& a, const mymath::matn<T>& b);
-template<typename T>
-mymath::matn<T> operator*(const mymath::matn<T>& a, const mymath::matn<T>& b);
-template<typename T>
-mymath::matn<T> gaussianInverse(const mymath::matn<T>& a);
-
-template<typename T>
-mymath::vecn<T> operator*(const mymath::matn<T>& a, const mymath::vecn<T>& b);
-template<typename T>
-mymath::matn<T> operator+(const mymath::matn<T>& a, const mymath::vecn<T>& b);
-
-
-
-
-
-
-
-
-// REDEFINE THESE FOR YOUR TOKEN CLASS
-
-
-  // template<typename _Tp>
-  //   inline _GLIBCXX20_CONSTEXPR complex<_Tp>
-  //   operator+(const complex<_Tp>& __x, const complex<_Tp>& __y)
-  //   {
-  //     complex<_Tp> __r = __x;
-  //     __r += __y;
-  //     return __r;
-  //   }
-
-  // template<typename _Tp>
-  //   inline _GLIBCXX20_CONSTEXPR complex<_Tp>
-  //   operator+(const complex<_Tp>& __x, const _Tp& __y)
-  //   {
-  //     complex<_Tp> __r = __x;
-  //     __r += __y;
-  //     return __r;
-  //   }
-
-  // template<typename _Tp>
-  //   inline _GLIBCXX20_CONSTEXPR complex<_Tp>
-  //   operator+(const _Tp& __x, const complex<_Tp>& __y)
-  //   {
-  //     complex<_Tp> __r = __y;
-  //     __r += __x;
-  //     return __r;
-  //   }
-
-
+// template<>
+// inline _GLIBCXX20_CONSTEXPR std::complex<mymath::Token>
+// std::operator-(const std::complex<mymath::Token>& __x);
 
 
 #include"math/matvec/vec.hpp"
