@@ -6,24 +6,19 @@ int main()
   using namespace mymath;
 
 
-  Token a(new std::complex<Token>(Token(new long double(15),DT_REAL),Token(new long double(12),DT_REAL)), DT_COMPLEX);
-  Token b(new long double(16.0), DT_REAL);
+  ExpressionTreeNode* node = new ExpressionTreeNode(Token(nullptr, OP_DIVIDE));
+  node->children.push_back(new ExpressionTreeNode(Token(nullptr, OP_DIVIDE)));
+  node->children.push_back(new ExpressionTreeNode(Token(nullptr, OP_MULTIPLY)));
+  node->children.at(0)->children.push_back(new ExpressionTreeNode(Token(new long double(1), DT_REAL)));
+  node->children.at(0)->children.push_back(new ExpressionTreeNode(Token(new long double(2), DT_REAL)));
+  node->children.at(1)->children.push_back(new ExpressionTreeNode(Token(new long double(3), DT_REAL)));
+  node->children.at(1)->children.push_back(new ExpressionTreeNode(Token(new long double(4), DT_REAL)));
 
-  Token c = b - a;
-  Token d = a - b;
-  Token e = -a;
+  std::cout<<node->children.size()<<"\n";
+  
+  formatArithmeticChains(node);
 
-  Token real_part(static_cast<Token>(static_cast<std::complex<Token>*>(c.dataptr)->real()));
-  Token imag_part(static_cast<Token>(static_cast<std::complex<Token>*>(c.dataptr)->imag()));
-  std::cout<<"result: type should be 25, actual is: "<<c.type<<"\n"<<"data held is: "<<*static_cast<long double*>(real_part.dataptr)<<", "<<*static_cast<long double*>(imag_part.dataptr)<<"i\n";
-
-  real_part = static_cast<Token>(static_cast<std::complex<Token>*>(d.dataptr)->real());
-  imag_part = static_cast<Token>(static_cast<std::complex<Token>*>(d.dataptr)->imag());
-  std::cout<<"result: type should be 25, actual is: "<<d.type<<"\n"<<"data held is: "<<*static_cast<long double*>(real_part.dataptr)<<", "<<*static_cast<long double*>(imag_part.dataptr)<<"i\n";
-
-  real_part = static_cast<Token>(static_cast<std::complex<Token>*>(e.dataptr)->real());
-  imag_part = static_cast<Token>(static_cast<std::complex<Token>*>(e.dataptr)->imag());
-  std::cout<<"result: type should be 25, actual is: "<<e.type<<"\n"<<"data held is: "<<*static_cast<long double*>(real_part.dataptr)<<", "<<*static_cast<long double*>(imag_part.dataptr)<<"i\n";
+  std::cout<<node->children.size()<<"\n";
 
   return 0;
 }

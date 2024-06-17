@@ -25,6 +25,7 @@ namespace mymath
     mymath::ExpressionTreeNode* new_tree = new mymath::ExpressionTreeNode(mymath::Token(nullptr,op));
     new_tree->children.push_back(tree);
     new_tree->children.push_back(new mymath::ExpressionTreeNode(*other));
+    tree = new_tree;
   }
 
   void applyUnaryOperation(mymath::ExpressionTreeNode*& tree, mymath::TokenType op)

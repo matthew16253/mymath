@@ -33,10 +33,18 @@ namespace mymath
   void formatAddSubChain(mymath::ExpressionTreeNode*& tree) //given that:   tree->data.type == OP_ADD || OP_SUBTRACT
   {
     std::vector<mymath::ExpressionTreeNode*> addNodes, subNodes;
-    getAddSubNodes(tree,addNodes,subNodes);
+    getAddSubNodes(tree,addNodes,subNodes,OP_ADD);
     mymath::ExpressionTreeNode* new_tree;
-    if(addNodes.size() > 1){formatArithmeticChains(addNodes.front());new_tree = addNodes.front();}
-    else{formatArithmeticChains(subNodes.front());new_tree = subNodes.front();}
+    if(addNodes.size() > 1)
+    {
+      formatArithmeticChains(addNodes.front());
+      new_tree = addNodes.front();
+    }
+    else
+    {
+      formatArithmeticChains(subNodes.front());
+      new_tree = subNodes.front();
+    }
     // add all items in list to + chain, as well as -chain
     for(int i = ((addNodes.size() > 1)? 1 : 0); i < addNodes.size(); i++)
     {
@@ -52,12 +60,39 @@ namespace mymath
   }
   void getAddSubNodes(mymath::ExpressionTreeNode*& currentNode,std::vector<mymath::ExpressionTreeNode*>& currentAddNodes, std::vector<mymath::ExpressionTreeNode*>& currentSubNodes, mymath::TokenType aboveNodeType)
   {
-    if(currentNode->data.type != mymath::TokenType::OP_ADD && currentNode->data.type != mymath::TokenType::OP_SUBTRACT && aboveNodeType == mymath::TokenType::OP_ADD){currentAddNodes.push_back(currentNode);}
-    else if(currentNode->data.type != mymath::TokenType::OP_ADD && currentNode->data.type != mymath::TokenType::OP_SUBTRACT && aboveNodeType == mymath::TokenType::OP_SUBTRACT){currentSubNodes.push_back(currentNode);}
-    else
+    if(currentNode->data.type != mymath::TokenType::OP_ADD && currentNode->data.type != mymath::TokenType::OP_SUBTRACT && aboveNodeType == mymath::TokenType::OP_ADD)
     {
-      getAddSubNodes(currentNode->children.at(0),currentAddNodes,currentSubNodes, currentNode->data.type);
-      getAddSubNodes(currentNode->children.at(1),currentAddNodes,currentSubNodes, currentNode->data.type);
+      currentAddNodes.push_back(currentNode);
+    }
+    else if(currentNode->data.type != mymath::TokenType::OP_ADD && currentNode->data.type != mymath::TokenType::OP_SUBTRACT && aboveNodeType == mymath::TokenType::OP_SUBTRACT)
+    {
+      currentSubNodes.push_back(currentNode);
+    }
+    else if(aboveNodeType == OP_ADD)
+    {
+      if(currentNode->data.type == OP_ADD)
+      {
+        getAddSubNodes(currentNode->children.at(0),currentAddNodes,currentSubNodes, OP_ADD);
+        getAddSubNodes(currentNode->children.at(1),currentAddNodes,currentSubNodes, OP_ADD);
+      }
+      else
+      {
+        getAddSubNodes(currentNode->children.at(0),currentAddNodes,currentSubNodes, OP_ADD);
+        getAddSubNodes(currentNode->children.at(1),currentAddNodes,currentSubNodes, OP_SUBTRACT);
+      }
+    }
+    else if(aboveNodeType == OP_SUBTRACT)
+    {
+      if(currentNode->data.type == OP_ADD)
+      {
+        getAddSubNodes(currentNode->children.at(0),currentAddNodes,currentSubNodes, OP_SUBTRACT);
+        getAddSubNodes(currentNode->children.at(1),currentAddNodes,currentSubNodes, OP_SUBTRACT);
+      }
+      else
+      {
+        getAddSubNodes(currentNode->children.at(0),currentAddNodes,currentSubNodes, OP_SUBTRACT);
+        getAddSubNodes(currentNode->children.at(1),currentAddNodes,currentSubNodes, OP_ADD);
+      }
     }
   }
 
@@ -75,19 +110,19 @@ namespace mymath
       applyBinaryOperation(new_numeratorTree,mymath::TokenType::OP_MULTIPLY,numeratorNodes.at(i));
     }
 
-    new_tree = new_numeratorTree;
 
     if(denominatorNodes.size() > 0)
     {  
       formatArithmeticChains(denominatorNodes.at(0));
       new_denominatorTree = denominatorNodes.at(0);
-      for(int i = 1; i < numeratorNodes.size(); i++)
+      for(int i = 1; i < denominatorNodes.size(); i++)
       {
-        formatArithmeticChains(numeratorNodes.at(i));
-        applyBinaryOperation(new_numeratorTree,mymath::TokenType::OP_MULTIPLY,numeratorNodes.at(i));
+        formatArithmeticChains(denominatorNodes.at(i));
+        applyBinaryOperation(new_denominatorTree,mymath::TokenType::OP_MULTIPLY,denominatorNodes.at(i));
       }
-      applyBinaryOperation(new_tree,mymath::TokenType::OP_DIVIDE,new_denominatorTree);
+      applyBinaryOperation(new_numeratorTree,mymath::TokenType::OP_DIVIDE,new_denominatorTree);
     }
+    new_tree = new_numeratorTree;
 
     tree = new_tree;
   }
