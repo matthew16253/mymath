@@ -260,7 +260,107 @@ namespace mymath
   }
 
   template<typename T>
-  mymath::matn<T> gaussianInverse(const mymath::matn<T>& a)
+  void matn<T>::operator*=(const mymath::vecn<T>& b)
+  {
+    mymath::matn<T> c(1,height);
+    for(int cy = 0; cy < height; cy++)
+    {
+      T sum = T();
+      int aindex = cy * width;
+      int bindex = 0;
+      for(int i = 0; i < width; i++)
+      {
+        sum = sum + data[aindex] * b.data[bindex];
+        aindex++;
+        bindex++;
+      }
+      c.at(cy) = sum;
+    }
+     *this = std::move(c);
+  }
+
+  template<typename T>
+  void matn<T>::operator*=( const mymath::matn<T>& b)
+  {
+    mymath::matn<T> c(height, b.width);
+    for(int cy = 0; cy < height; cy++)
+    {
+      for(int cx = 0; cx < b.width; cx++)
+      {
+        T sum = T();
+        int aindex = cy * width;
+        int bindex = cx;
+        for(int i = 0; i < width; i++)
+        {
+          sum = sum + data[aindex] * b.data[bindex];
+          aindex++;
+          bindex += b.width;
+        }
+        c.at(cx,cy) = sum;
+      }
+    }
+    *this = std::move(c);
+  }
+
+  template<typename T>
+  void vecn<T>::operator*=(const mymath::matn<T>& b)
+  {
+    mymath::vecn<T> c(height);
+    for(int cy = 0; cy < height; cy++)
+    {
+      T sum = T();
+      int aindex = cy * 1;
+      int bindex = 0;
+      for(int i = 0; i < 1; i++)
+      {
+        sum = sum + data[aindex] * b.data[bindex];
+        aindex++;
+        bindex++;
+      }
+      c.at(cy) = sum;
+    }
+     *this = std::move(c);
+  }
+
+
+  template<typename T>
+  void vecn<T>::operator*=(const mymath::vecn<T>& b)
+  {
+    mymath::vecn<T> c(height);
+    for(int cy = 0; cy < height; cy++)
+    {
+      T sum = T();
+      int aindex = cy * 1;
+      int bindex = 0;
+      for(int i = 0; i < 1; i++)
+      {
+        sum = sum + data[aindex] * b.data[bindex];
+        aindex++;
+        bindex++;
+      }
+      c.at(cy) = sum;
+    }
+     *this = std::move(c);
+  }
+  template<typename T>
+  void matn<T>::operator*=(const T& other)
+  {
+    for(int i = 0; i < width*height; i++)
+    {
+      data[i] *= other;
+    }
+  }
+  template<typename T>
+  void vecn<T>::operator*=(const T& other)
+  {
+    for(int i = 0; i < height; i++)
+    {
+      data[i] *= other;
+    }
+  }
+
+  template<typename T>
+  mymath::vecn<T> gaussianInverse(const mymath::matn<T>& a)
   {
     mymath::matn<T> augmented_mat(a.width*2, a.height);
     for(int row = 0; row < augmented_mat.height; row++)

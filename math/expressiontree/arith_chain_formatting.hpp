@@ -13,13 +13,17 @@ namespace mymath
 {
   void formatArithmeticChains(mymath::ExpressionTreeNode*& tree)
   {
-    if(tree->data.type==mymath::TokenType::OP_ADD || tree->data.type==mymath::TokenType::OP_SUBTRACT)
+    if(isAddNode(tree))
     {
-      formatAddSubChain(tree);
+      formatAddChain(tree);
     }
-    else if(tree->data.type==mymath::TokenType::OP_DIVIDE || tree->data.type==mymath::TokenType::OP_MULTIPLY)
+    else if(isMulNode(tree) || isDivNode(tree))
     {
       formatMulDivChain(tree);
+    }
+    else if(isPowNode)
+    {
+      formatPowNodes(tree);
     }
     else
     {
@@ -30,116 +34,128 @@ namespace mymath
     }
   }
 
-  void formatAddSubChain(mymath::ExpressionTreeNode*& tree) //given that:   tree->data.type == OP_ADD || OP_SUBTRACT
+  void formatAddChain(mymath::ExpressionTreeNode*& tree) //given that:   tree->data.type == OP_ADD
   {
-    std::vector<mymath::ExpressionTreeNode*> addNodes, subNodes;
-    getAddSubNodes(tree,addNodes,subNodes,OP_ADD);
-    mymath::ExpressionTreeNode* new_tree;
-    if(addNodes.size() > 1)
+    ExpressionTreeNode* new_tree = new ExpressionTreeNode(Token(nullptr, DT_SUM_CHAIN));
+
+    getAddNodes(tree,new_tree->children);
+
+    tree = new_tree;
+  }
+  void getAddNodes(mymath::ExpressionTreeNode*& currentNode,std::vector<mymath::ExpressionTreeNode*>& currentAddNodes)
+  {
+    if(!isAddNode(currentNode))
     {
-      formatArithmeticChains(addNodes.front());
-      new_tree = addNodes.front();
+      formatArithmeticChains(currentNode);
+      currentAddNodes.push_back(currentNode);
+      currentNode->children = {};
     }
     else
     {
-      formatArithmeticChains(subNodes.front());
-      new_tree = subNodes.front();
-    }
-    // add all items in list to + chain, as well as -chain
-    for(int i = ((addNodes.size() > 1)? 1 : 0); i < addNodes.size(); i++)
-    {
-      formatArithmeticChains(addNodes.at(i));
-      applyBinaryOperation(new_tree,mymath::TokenType::OP_ADD,addNodes.at(i));
-    }
-    for(int i = ((subNodes.size() > 1)? 0 : 1); i < subNodes.size(); i++)
-    {
-      formatArithmeticChains(subNodes.at(i));
-      applyBinaryOperation(new_tree,mymath::TokenType::OP_SUBTRACT,subNodes.at(i));
-    }
-    tree = new_tree;
-  }
-  void getAddSubNodes(mymath::ExpressionTreeNode*& currentNode,std::vector<mymath::ExpressionTreeNode*>& currentAddNodes, std::vector<mymath::ExpressionTreeNode*>& currentSubNodes, mymath::TokenType aboveNodeType)
-  {
-    if(currentNode->data.type != mymath::TokenType::OP_ADD && currentNode->data.type != mymath::TokenType::OP_SUBTRACT && aboveNodeType == mymath::TokenType::OP_ADD)
-    {
-      currentAddNodes.push_back(currentNode);
-    }
-    else if(currentNode->data.type != mymath::TokenType::OP_ADD && currentNode->data.type != mymath::TokenType::OP_SUBTRACT && aboveNodeType == mymath::TokenType::OP_SUBTRACT)
-    {
-      currentSubNodes.push_back(currentNode);
-    }
-    else if(aboveNodeType == OP_ADD)
-    {
-      if(currentNode->data.type == OP_ADD)
+      for(int index = 0; index < currentNode->children.size(); index++)
       {
-        getAddSubNodes(currentNode->children.at(0),currentAddNodes,currentSubNodes, OP_ADD);
-        getAddSubNodes(currentNode->children.at(1),currentAddNodes,currentSubNodes, OP_ADD);
+        getAddNodes(currentNode->children.at(index),currentAddNodes);
       }
-      else
-      {
-        getAddSubNodes(currentNode->children.at(0),currentAddNodes,currentSubNodes, OP_ADD);
-        getAddSubNodes(currentNode->children.at(1),currentAddNodes,currentSubNodes, OP_SUBTRACT);
-      }
-    }
-    else if(aboveNodeType == OP_SUBTRACT)
-    {
-      if(currentNode->data.type == OP_ADD)
-      {
-        getAddSubNodes(currentNode->children.at(0),currentAddNodes,currentSubNodes, OP_SUBTRACT);
-        getAddSubNodes(currentNode->children.at(1),currentAddNodes,currentSubNodes, OP_SUBTRACT);
-      }
-      else
-      {
-        getAddSubNodes(currentNode->children.at(0),currentAddNodes,currentSubNodes, OP_SUBTRACT);
-        getAddSubNodes(currentNode->children.at(1),currentAddNodes,currentSubNodes, OP_ADD);
-      }
+      currentNode->children  = {};
+      delete currentNode;
     }
   }
 
   void formatMulDivChain(mymath::ExpressionTreeNode*& tree, bool aboveIsNumerator)
   {
-    std::vector<mymath::ExpressionTreeNode*> numeratorNodes, denominatorNodes;
-    getMulDivNodes(tree,numeratorNodes,denominatorNodes,aboveIsNumerator);
-    mymath::ExpressionTreeNode* new_numeratorTree, *new_denominatorTree, *new_tree;
+    ExpressionTreeNode* new_tree;
+    ExpressionTreeNode* new_numeratorTree = new ExpressionTreeNode(Token(nullptr, DT_MUL_CHAIN));
+    ExpressionTreeNode* new_denominatorTree = new ExpressionTreeNode(Token(nullptr, DT_MUL_CHAIN));
 
-    formatArithmeticChains(numeratorNodes.at(0));
-    new_numeratorTree =  numeratorNodes.at(0);
-    for(int i = 1; i < numeratorNodes.size(); i++)
+    getMulDivNodes(tree,new_numeratorTree->children,new_denominatorTree->children,aboveIsNumerator);
+
+    if(new_denominatorTree->children.size() == 0)
     {
-      formatArithmeticChains(numeratorNodes.at(i));
-      applyBinaryOperation(new_numeratorTree,mymath::TokenType::OP_MULTIPLY,numeratorNodes.at(i));
+      delete new_denominatorTree;
+      new_tree = new_numeratorTree;
     }
-
-
-    if(denominatorNodes.size() > 0)
-    {  
-      formatArithmeticChains(denominatorNodes.at(0));
-      new_denominatorTree = denominatorNodes.at(0);
-      for(int i = 1; i < denominatorNodes.size(); i++)
-      {
-        formatArithmeticChains(denominatorNodes.at(i));
-        applyBinaryOperation(new_denominatorTree,mymath::TokenType::OP_MULTIPLY,denominatorNodes.at(i));
-      }
-      applyBinaryOperation(new_numeratorTree,mymath::TokenType::OP_DIVIDE,new_denominatorTree);
+    else
+    {
+      new_tree = new ExpressionTreeNode(Token(nullptr, OP_DIVIDE));
+      new_tree->children = {new_numeratorTree, new_denominatorTree};
     }
-    new_tree = new_numeratorTree;
-
     tree = new_tree;
   }
 
   void getMulDivNodes(mymath::ExpressionTreeNode*& currentNode,std::vector<mymath::ExpressionTreeNode*>& currentNumeratorNodes, std::vector<mymath::ExpressionTreeNode*>& currentDenominatorNodes, bool aboveIsNumerator)
   {
-    if(currentNode->data.type != mymath::TokenType::OP_MULTIPLY && currentNode->data.type != mymath::TokenType::OP_DIVIDE && aboveIsNumerator){currentNumeratorNodes.push_back(currentNode);}
-    else if(currentNode->data.type != mymath::TokenType::OP_MULTIPLY && currentNode->data.type != mymath::TokenType::OP_DIVIDE && !aboveIsNumerator){currentDenominatorNodes.push_back(currentNode);}
+    if(!isMulNode(currentNode) && !isDivNode(currentNode) && aboveIsNumerator){currentNumeratorNodes.push_back(currentNode);}
+    else if(!isMulNode(currentNode) && !isDivNode(currentNode) && !aboveIsNumerator){currentDenominatorNodes.push_back(currentNode);}
     else if(currentNode->data.type == mymath::TokenType::OP_MULTIPLY)
     {
-      getMulDivNodes(currentNode->children.at(0),currentNumeratorNodes,currentDenominatorNodes,aboveIsNumerator);
-      getMulDivNodes(currentNode->children.at(1),currentNumeratorNodes,currentDenominatorNodes,aboveIsNumerator);
+      for(int index = 0; index < currentNode->children.size(); index++)
+      {
+        getMulDivNodes(currentNode->children.at(index), currentNumeratorNodes, currentDenominatorNodes, aboveIsNumerator);
+      }
+
+      currentNode->children.clear();
+      delete currentNode;
     }
     else if(currentNode->data.type == mymath::TokenType::OP_DIVIDE)
     {
       getMulDivNodes(currentNode->children.at(0),currentNumeratorNodes,currentDenominatorNodes,aboveIsNumerator);
       getMulDivNodes(currentNode->children.at(1),currentNumeratorNodes,currentDenominatorNodes,!aboveIsNumerator);
+
+      currentNode->children.clear();
+      delete currentNode;
+    }
+  }
+
+  void formatPowNodes(ExpressionTreeNode*& tree)
+  {
+    ExpressionTreeNode* new_tree = new ExpressionTreeNode(Token(nullptr, OP_POWER));
+    ExpressionTreeNode* new_exponent = new ExpressionTreeNode(Token(nullptr, DT_MUL_CHAIN));
+    ExpressionTreeNode* new_base;
+    getPowNodes(tree, new_exponent->children, new_base);
+    new_tree->children.push_back(new_base);
+    new_tree->children.push_back(new_exponent);
+  }
+  void getPowNodes(ExpressionTreeNode*& currentNode, std::vector<ExpressionTreeNode*>& currentPowNodes, ExpressionTreeNode*& base)
+  {
+    if(isPowNode(currentNode->children.at(0)))
+    {
+      formatArithmeticChains(currentNode->children.at(1));
+      currentPowNodes.push_back(currentNode->children.at(1));
+      
+      currentNode->children.clear();
+      delete currentNode;
+    }
+    else
+    {
+      base = currentNode->children.at(0);
+      currentPowNodes.push_back(currentNode->children.at(1));
+    }
+  }
+  void expandMulChainToPow(ExpressionTreeNode*& tree)
+  {
+    if(isPowNode(tree) && isMulChainNode(tree->children.at(0)))
+    {
+      expandMulChainToPow(tree->children.at(1));
+      for(int index = 0; index < tree->children.at(0)->children.size(); index++)
+      {
+        ExpressionTreeNode* new_pow_node = new ExpressionTreeNode(Token(nullptr, OP_POWER));
+        expandMulChainToPow(tree->children.at(0)->children.at(index));
+        new_pow_node->children.push_back(tree->children.at(0)->children.at(index));
+        new_pow_node->children.push_back(new ExpressionTreeNode(*(tree->children.at(1))));
+        tree->children.at(0)->children.at(index) = new_pow_node;
+      }
+      ExpressionTreeNode* new_tree = tree->children.at(0);
+      tree->children.at(0) = nullptr;
+      delete tree;
+
+      tree = new_tree;
+    }
+    else
+    {
+      for(int index = 0; index < tree->children.size(); index++)
+      {
+        expandMulChainToPow(tree->children.at(index));
+      }
     }
   }
 }

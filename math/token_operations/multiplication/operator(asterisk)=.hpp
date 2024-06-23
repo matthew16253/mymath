@@ -28,6 +28,7 @@ namespace mymath
           {
             Token a_copy(a);
             *a_copy.vec_ptr *= *this;
+            swap(*this, a_copy);
             break;
           }
           case DT_MATRIX:
@@ -115,6 +116,72 @@ namespace mymath
           {
             Token a_copy(a);
             applyBinaryOperation(a_copy.expr_ptr, OP_MULTIPLY, *this);
+            swap(*this,a_copy);
+          }
+        }
+      }
+      case DT_MATRIX:
+      switch(a.type)
+      {
+        case DT_REAL:
+        {
+          *mat_ptr *= a;
+        }
+        case DT_COMPLEX:
+        {
+          *mat_ptr *= a;
+        }
+        case DT_VECTOR:
+        {
+          if(mat_ptr->width != a.vec_ptr->height)
+          {
+            int arr[] = {mat_ptr->width, a.vec_ptr->height};
+            *this = Token(new InfoLog<2,int>(arr), ERROR_INVALID_2_OPERANDS);
+          }
+          else
+          {
+            *mat_ptr *= *a.vec_ptr;
+          }
+        }
+        case DT_MATRIX:
+        {
+          if(mat_ptr->width != a.mat_ptr->height)
+          {
+            int arr[] = {mat_ptr->width, a.mat_ptr->height};
+            *this = Token(new InfoLog<2,int>(arr), ERROR_INVALID_2_OPERANDS);
+          }
+        }
+        case DT_ALGEBRAIC_EXPR:
+        {
+          Token a_copy(a);
+          applyBinaryOperation(a_copy.expr_ptr, OP_MULTIPLY, *this);
+          swap(*this,a_copy);
+        }
+      }
+      case DT_ALGEBRAIC_EXPR:
+      {
+        switch(a.type)
+        {
+          case DT_REAL:
+          {
+            applyBinaryOperation(expr_ptr, OP_MULTIPLY, a);
+          }
+          case DT_COMPLEX:
+          {
+            applyBinaryOperation(expr_ptr, OP_MULTIPLY, a);
+          }
+          case DT_VECTOR:
+          {
+            applyBinaryOperation(expr_ptr, OP_MULTIPLY, a);
+          }
+          case DT_MATRIX:
+          {
+            applyBinaryOperation(expr_ptr, OP_MULTIPLY, a);
+          }
+          case DT_ALGEBRAIC_EXPR:
+          {
+            ExpressionTreeNode* local_expr_ptr = a.expr_ptr;
+            applyBinaryOperation(expr_ptr, OP_MULTIPLY, local_expr_ptr);
           }
         }
       }

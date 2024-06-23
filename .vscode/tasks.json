@@ -8,9 +8,9 @@
       "args": [
         "-fdiagnostics-color=always",
         "-g",
-        "${file}",
+        "C:\\Users\\matth\\Documents\\coding\\cpp\\include\\mymath\\test.cpp",
         "-o",
-        "${fileDirname}\\${fileBasenameNoExtension}.exe"
+        "C:\\Users\\matth\\Documents\\coding\\cpp\\include\\mymath\\test.exe",
       ],
       "options": {},
       "problemMatcher": [

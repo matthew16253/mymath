@@ -56,6 +56,49 @@ namespace mymath
     dataptr = nullptr;
     type = DT_UNINIT;
   }
+
+  std::ostream& operator<<(std::ostream& os, const Token& token)
+  {
+    switch(token.type)
+    {
+      case DT_REAL:
+      {
+        os <<"("<<*token.real_ptr<<")";
+        break;
+      }
+      case DT_COMPLEX:
+      {
+        os <<"("<<*token.complex_ptr->real().real_ptr<<"+"<<*token.complex_ptr->imag().real_ptr<<"i)";
+        break;
+      }
+      case DT_VECTOR:
+      {
+        os <<"[";
+        for(int index = 0; index < token.vec_ptr->height; index++)
+        {
+          os <<token.vec_ptr->at(index)<<",\n";
+        }
+        os <<"]";
+        break;
+      }
+      case DT_MATRIX:
+      {
+        os <<"[";
+        for(int y = 0; y < token.mat_ptr->height; y++)
+        {
+          for(int x = 0; x < token.mat_ptr->width; x++)
+          {
+            os <<token.mat_ptr->at(x,y)<<",";
+          }
+          os <<", ";
+        }
+        os <<"]";
+        break;
+      }
+    }
+    return os;
+  }
+
 }
 
 #include"token_operations/addition/operator+.hpp"
