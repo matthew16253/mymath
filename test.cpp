@@ -6,12 +6,26 @@ int main()
   using namespace mymath;
 
 
-  Token a(new long double(1.0), DT_REAL);
-  Token b(new long double(2.0), DT_REAL);
+  ExpressionTreeNode* node = new ExpressionTreeNode(Token(nullptr, OP_DIVIDE));
+  node->children.push_back(new ExpressionTreeNode(Token(nullptr, OP_MULTIPLY)));
+    node->children.at(0)->children.push_back(new ExpressionTreeNode(Token(nullptr, OP_ADD)));
+      node->children.at(0)->children.at(0)->children.push_back(new ExpressionTreeNode(Token(new long double(1), DT_REAL)));
+      node->children.at(0)->children.at(0)->children.push_back(new ExpressionTreeNode(Token(new long double(2), DT_REAL)));
+      node->children.at(0)->children.push_back(new ExpressionTreeNode(Token(new long double(3), DT_REAL)));
+  node->children.push_back(new ExpressionTreeNode(Token(nullptr, OP_DIVIDE)));
+    node->children.at(1)->children.push_back(new ExpressionTreeNode(Token(new long double(4), DT_REAL)));
+    node->children.at(1)->children.push_back(new ExpressionTreeNode(Token(new long double(5), DT_REAL)));
+  
+  std::cout<<"\n\n\n\n"<<"before\n";
+  print(node);
 
-  Token c = a + b;
-  std::cout<<"type should be 24, actual is: "<<c.type<<"\n"<<"data held is: "<<*static_cast<long double*>(c.dataptr)<<"\n";
+  formatArithmeticChains(node);
 
+  std::cout<<"\n\n\n\n"<<"after\n";
+  print(node);
+  
+
+  delete node;
 
   return 0;
 }
