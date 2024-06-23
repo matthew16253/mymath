@@ -58,8 +58,9 @@ namespace mymath
       case OP_ADD:{os<<"+";break;}
       case OP_MULTIPLY:{os<<"*";break;}
       case OP_DIVIDE:{os<<"/";break;}
-      case DT_SUM_CHAIN:{os<<"+";break;}
-      case DT_MUL_CHAIN:{os<<"*";break;}
+      case OP_POWER:{os<<"^";break;}
+      case DT_SUM_CHAIN:{os<<"+(chain)";break;}
+      case DT_MUL_CHAIN:{os<<"*(chain)";break;}
     }
     return os;
   }

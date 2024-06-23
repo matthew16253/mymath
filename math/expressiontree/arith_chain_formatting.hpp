@@ -21,7 +21,7 @@ namespace mymath
     {
       formatMulDivChain(tree);
     }
-    else if(isPowNode)
+    else if(isPowNode(tree))
     {
       formatPowNodes(tree);
     }
@@ -127,6 +127,8 @@ namespace mymath
     }
     else
     {
+      formatArithmeticChains(currentNode->children.at(0));
+      formatArithmeticChains(currentNode->children.at(1));
       base = currentNode->children.at(0);
       currentPowNodes.push_back(currentNode->children.at(1));
     }
