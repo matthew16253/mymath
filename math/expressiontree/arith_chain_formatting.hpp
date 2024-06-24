@@ -13,11 +13,11 @@ namespace mymath
 {
   void formatArithmeticChains(mymath::ExpressionTreeNode*& tree)
   {
-    if(isAddNode(tree))
+    if(isAddNode(tree) || isAddChainNode(tree))
     {
       formatAddChain(tree);
     }
-    else if(isMulNode(tree) || isDivNode(tree))
+    else if(isMulNode(tree) || isMulChainNode(tree) || isDivNode(tree))
     {
       formatMulDivChain(tree);
     }
@@ -44,7 +44,7 @@ namespace mymath
   }
   void getAddNodes(mymath::ExpressionTreeNode*& currentNode,std::vector<mymath::ExpressionTreeNode*>& currentAddNodes)
   {
-    if(!isAddNode(currentNode))
+    if(!(isAddNode(currentNode) || isAddChainNode(currentNode)))
     {
       formatArithmeticChains(currentNode);
       currentAddNodes.push_back(currentNode);
@@ -84,8 +84,8 @@ namespace mymath
 
   void getMulDivNodes(mymath::ExpressionTreeNode*& currentNode,std::vector<mymath::ExpressionTreeNode*>& currentNumeratorNodes, std::vector<mymath::ExpressionTreeNode*>& currentDenominatorNodes, bool aboveIsNumerator)
   {
-    if(!isMulNode(currentNode) && !isDivNode(currentNode) && aboveIsNumerator){currentNumeratorNodes.push_back(currentNode);}
-    else if(!isMulNode(currentNode) && !isDivNode(currentNode) && !aboveIsNumerator){currentDenominatorNodes.push_back(currentNode);}
+    if(!isMulNode(currentNode) && !isMulChainNode(currentNode) && !isDivNode(currentNode) && aboveIsNumerator){currentNumeratorNodes.push_back(currentNode);}
+    else if(!isMulNode(currentNode) && !isMulChainNode(currentNode)  && !isDivNode(currentNode) && !aboveIsNumerator){currentDenominatorNodes.push_back(currentNode);}
     else if(currentNode->data.type == mymath::TokenType::OP_MULTIPLY)
     {
       for(int index = 0; index < currentNode->children.size(); index++)
@@ -96,7 +96,7 @@ namespace mymath
       currentNode->children.clear();
       delete currentNode;
     }
-    else if(currentNode->data.type == mymath::TokenType::OP_DIVIDE)
+    else if(isDivNode(currentNode))
     {
       getMulDivNodes(currentNode->children.at(0),currentNumeratorNodes,currentDenominatorNodes,aboveIsNumerator);
       getMulDivNodes(currentNode->children.at(1),currentNumeratorNodes,currentDenominatorNodes,!aboveIsNumerator);
