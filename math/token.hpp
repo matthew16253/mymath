@@ -40,6 +40,22 @@ namespace mymath
       default:  {}
     }
   }
+
+
+  Token::Token(long double other) : dataptr(new long double(other)), type(DT_REAL)  {}
+  Token::Token(const std::complex<Token>& other) : dataptr(new std::complex<Token>(other)), type(DT_COMPLEX)  {}
+  Token::Token(const vecn<Token>& other) : dataptr(new vecn<Token>(other)), type(DT_VECTOR)  {}
+  Token::Token(const matn<Token>& other) : dataptr(new matn<Token>(other)), type(DT_MATRIX)  {}
+  Token::Token(const ExpressionTreeNode& other) :dataptr(new ExpressionTreeNode(other)), type(DT_ALGEBRAIC_EXPR)  {}
+
+  Token Token::operator=(long double other){*this = Token(other);}
+  Token Token::operator=(const std::complex<Token>& other){*this = Token(other);}
+  Token Token::operator=(const vecn<Token>& other){*this = Token(other);}
+  Token Token::operator=(const matn<Token>& other){*this = Token(other);}
+  Token Token::operator=(const ExpressionTreeNode& other){*this = Token(other);}
+
+
+
   Token::Token(Token&& other) : dataptr(other.dataptr), type(other.type)
   {
     other.empty();

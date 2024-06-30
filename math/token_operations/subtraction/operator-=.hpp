@@ -13,6 +13,7 @@ void mymath::Token::operator-=(const mymath::Token& b) // DO NOT USE THE INPUTTE
   {
     return;
   }
+  if(isError(type) || isError(b.type)){return;}
 
   switch(type)
   {
@@ -38,7 +39,9 @@ void mymath::Token::operator-=(const mymath::Token& b) // DO NOT USE THE INPUTTE
           // applyBinaryOperation(new_tree,OP_ADD,*this);
           // new_token = Token(new_tree,DT_ALGEBRAIC_EXPR);
           Token b_copy = b;
-          applyBinaryOperation(*this,OP_SUBTRACT,b_copy.expr_ptr);
+          ExpressionTreeNodePtr b_copy_expr_ptr = b_copy.expr_ptr;
+          applyBinaryOperation(*this,OP_SUBTRACT,b_copy_expr_ptr);
+          b_copy.expr_ptr = b_copy_expr_ptr;
           swap(*this,b_copy);
           break;
         }
@@ -68,7 +71,9 @@ void mymath::Token::operator-=(const mymath::Token& b) // DO NOT USE THE INPUTTE
         case DT_ALGEBRAIC_EXPR:
         {
           Token b_copy(b);
-          applyBinaryOperation(*this,OP_SUBTRACT,b_copy.expr_ptr);
+          ExpressionTreeNodePtr b_copy_expr_ptr = b_copy.expr_ptr;
+          applyBinaryOperation(*this,OP_SUBTRACT,b_copy_expr_ptr);
+          b_copy.expr_ptr = b_copy_expr_ptr;
           swap(*this,b_copy);
           break;
         }
@@ -118,7 +123,9 @@ void mymath::Token::operator-=(const mymath::Token& b) // DO NOT USE THE INPUTTE
         case DT_ALGEBRAIC_EXPR:
         {
           Token b_copy(b);
-          applyBinaryOperation(*this,OP_SUBTRACT,b_copy.expr_ptr);
+          ExpressionTreeNodePtr b_copy_expr_ptr = b_copy.expr_ptr;
+          applyBinaryOperation(*this,OP_SUBTRACT,b_copy_expr_ptr);
+          b_copy.expr_ptr = b_copy_expr_ptr;
           swap(*this,b_copy);
           break;
         }
@@ -168,7 +175,9 @@ void mymath::Token::operator-=(const mymath::Token& b) // DO NOT USE THE INPUTTE
         case DT_ALGEBRAIC_EXPR:
         {
           Token b_copy(b);
-          applyBinaryOperation(b_copy.expr_ptr,OP_SUBTRACT,*this);
+          ExpressionTreeNodePtr b_copy_expr_ptr = b_copy.expr_ptr;
+          applyBinaryOperation(*this,OP_SUBTRACT,b_copy_expr_ptr);
+          b_copy.expr_ptr = b_copy_expr_ptr;
           swap(*this,b_copy);
           break;
         }
@@ -183,32 +192,33 @@ void mymath::Token::operator-=(const mymath::Token& b) // DO NOT USE THE INPUTTE
     }
     case DT_ALGEBRAIC_EXPR:
     {
+      ExpressionTreeNodePtr _expr_ptr = expr_ptr;
       switch(b.type)
       {
         case DT_REAL:
         {
-          applyBinaryOperation(expr_ptr, OP_SUBTRACT, b);
+          applyBinaryOperation(_expr_ptr, OP_SUBTRACT, b);
           break;
         }
         case DT_COMPLEX:
         {
-          applyBinaryOperation(expr_ptr, OP_SUBTRACT, b);
+          applyBinaryOperation(_expr_ptr, OP_SUBTRACT, b);
           break;
         }
         case DT_VECTOR:
         {
-          applyBinaryOperation(expr_ptr, OP_SUBTRACT, b);
+          applyBinaryOperation(_expr_ptr, OP_SUBTRACT, b);
           break;
         }
         case DT_MATRIX:
         {
-          applyBinaryOperation(expr_ptr, OP_SUBTRACT, b);
+          applyBinaryOperation(_expr_ptr, OP_SUBTRACT, b);
           break;
         }
         case DT_ALGEBRAIC_EXPR:
         {
-          Token b_copy(b);
-          applyBinaryOperation(expr_ptr, OP_SUBTRACT, b_copy.expr_ptr);
+          ExpressionTreeNodePtr b_expr_ptr = b.expr_ptr;
+          applyBinaryOperation(_expr_ptr, OP_SUBTRACT, b_expr_ptr);
           break;
         }
         default:

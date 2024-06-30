@@ -55,6 +55,16 @@ namespace mymath
   {
     return data + y*width;
   }
+
+  template<typename T>
+  matn<T> identity_matn(int width)
+  {
+    matn<T> new_matn;
+    for(int index = 0; index < width; index++)
+    {
+      new_matn.at(index,index) = 1;
+    }
+  }
 }
 
 #endif

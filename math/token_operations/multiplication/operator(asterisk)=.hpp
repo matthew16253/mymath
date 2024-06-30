@@ -7,6 +7,8 @@ namespace mymath
 {
   void Token::operator*=(const Token& a)
   {
+    if(a.type == DT_UNINIT){return;}
+    if(isError(type) || isError(a.type)){return;}
     switch(type)
     {
       case DT_REAL:
@@ -41,11 +43,14 @@ namespace mymath
           case DT_ALGEBRAIC_EXPR:
           {
             Token a_copy(a);
-            applyBinaryOperation(a_copy.expr_ptr, OP_MULTIPLY, *this);
+            ExpressionTreeNodePtr a_copy_expr_ptr = a_copy.expr_ptr;
+            applyBinaryOperation(a_copy_expr_ptr, OP_MULTIPLY, *this);
+            a_copy.expr_ptr = expr_ptr;
             swap(*this,a_copy);
             break;
           }
         }
+        break;
       }
       case DT_COMPLEX:
       {
@@ -78,11 +83,14 @@ namespace mymath
           case DT_ALGEBRAIC_EXPR:
           {
             Token a_copy(a);
-            applyBinaryOperation(a_copy.expr_ptr,OP_MULTIPLY,*this);
+            ExpressionTreeNodePtr a_copy_expr_ptr = a_copy.expr_ptr;
+            applyBinaryOperation(a_copy_expr_ptr, OP_MULTIPLY, *this);
+            a_copy.expr_ptr = expr_ptr;            
             swap(*this, a_copy);
             break;
           }
         }
+        break;
       }
       case DT_VECTOR:
       {
@@ -115,10 +123,14 @@ namespace mymath
           case DT_ALGEBRAIC_EXPR:
           {
             Token a_copy(a);
-            applyBinaryOperation(a_copy.expr_ptr, OP_MULTIPLY, *this);
+            ExpressionTreeNodePtr a_copy_expr_ptr = a_copy.expr_ptr;
+            applyBinaryOperation(a_copy_expr_ptr, OP_MULTIPLY, *this);
+            a_copy.expr_ptr = expr_ptr;            
             swap(*this,a_copy);
+            break;
           }
         }
+        break;
       }
       case DT_MATRIX:
       switch(a.type)
@@ -126,10 +138,12 @@ namespace mymath
         case DT_REAL:
         {
           *mat_ptr *= a;
+          break;
         }
         case DT_COMPLEX:
         {
           *mat_ptr *= a;
+          break;
         }
         case DT_VECTOR:
         {
@@ -142,6 +156,7 @@ namespace mymath
           {
             *mat_ptr *= *a.vec_ptr;
           }
+          break;
         }
         case DT_MATRIX:
         {
@@ -150,40 +165,66 @@ namespace mymath
             int arr[] = {mat_ptr->width, a.mat_ptr->height};
             *this = Token(new InfoLog<2,int>(arr), ERROR_INVALID_2_OPERANDS);
           }
+          else
+          {
+            *mat_ptr *= *a.mat_ptr;
+          }
+          break;
         }
         case DT_ALGEBRAIC_EXPR:
         {
           Token a_copy(a);
-          applyBinaryOperation(a_copy.expr_ptr, OP_MULTIPLY, *this);
+          ExpressionTreeNodePtr a_copy_expr_ptr = a_copy.expr_ptr;
+          applyBinaryOperation(a_copy_expr_ptr, OP_MULTIPLY, *this);
+          a_copy.expr_ptr = expr_ptr;
           swap(*this,a_copy);
+          break;
         }
+        break;
       }
       case DT_ALGEBRAIC_EXPR:
       {
+        ExpressionTreeNodePtr _expr_ptr;
         switch(a.type)
         {
           case DT_REAL:
           {
-            applyBinaryOperation(expr_ptr, OP_MULTIPLY, a);
+            applyBinaryOperation(_expr_ptr, OP_MULTIPLY, a);
+            expr_ptr = _expr_ptr;
+            break;
           }
           case DT_COMPLEX:
           {
-            applyBinaryOperation(expr_ptr, OP_MULTIPLY, a);
+            applyBinaryOperation(_expr_ptr, OP_MULTIPLY, a);
+            expr_ptr = _expr_ptr;
+            break;
           }
           case DT_VECTOR:
           {
-            applyBinaryOperation(expr_ptr, OP_MULTIPLY, a);
+            applyBinaryOperation(_expr_ptr, OP_MULTIPLY, a);
+            expr_ptr = _expr_ptr;
+            break;
           }
           case DT_MATRIX:
           {
-            applyBinaryOperation(expr_ptr, OP_MULTIPLY, a);
+            applyBinaryOperation(_expr_ptr, OP_MULTIPLY, a);
+            expr_ptr = _expr_ptr;
+            break;
           }
           case DT_ALGEBRAIC_EXPR:
           {
-            ExpressionTreeNode* local_expr_ptr = a.expr_ptr;
-            applyBinaryOperation(expr_ptr, OP_MULTIPLY, local_expr_ptr);
+            ExpressionTreeNodePtr a_expr_ptr = a.expr_ptr;
+            applyBinaryOperation(_expr_ptr, OP_MULTIPLY, a_expr_ptr);
+            expr_ptr = _expr_ptr;
+            break;
           }
         }
+        break;
+      }
+      case DT_UNINIT:
+      {
+        *this = Token(nullptr, DT_UNINIT);
+        break;
       }
     }
   }

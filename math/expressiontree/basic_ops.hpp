@@ -6,31 +6,31 @@
 
 namespace mymath
 {
-  void applyBinaryOperation(mymath::ExpressionTreeNode*& tree, mymath::TokenType op, const mymath::Token& other)
+  void applyBinaryOperation(ExpressionTreeNodePtr& tree, mymath::TokenType op, const mymath::Token& other)
   {
-    mymath::ExpressionTreeNode* new_tree = new mymath::ExpressionTreeNode(mymath::Token(nullptr,op));
+    ExpressionTreeNodePtr new_tree = new mymath::ExpressionTreeNode(mymath::Token(nullptr,op));
     new_tree->children.push_back(tree);
     new_tree->children.push_back(new mymath::ExpressionTreeNode(other));
     tree = new_tree;
   }
-  void applyBinaryOperation(const mymath::Token& other, mymath::TokenType op, mymath::ExpressionTreeNode*& tree)
+  void applyBinaryOperation(const mymath::Token& other, mymath::TokenType op, ExpressionTreeNodePtr& tree)
   {
-    mymath::ExpressionTreeNode* new_tree = new mymath::ExpressionTreeNode(mymath::Token(nullptr,op));
+    ExpressionTreeNodePtr new_tree = new mymath::ExpressionTreeNode(mymath::Token(nullptr,op));
     new_tree->children.push_back(new mymath::ExpressionTreeNode(other));
     new_tree->children.push_back(tree);
     tree = new_tree;
   }
-  void applyBinaryOperation(mymath::ExpressionTreeNode*& tree, mymath::TokenType op, mymath::ExpressionTreeNode*& other)
+  void applyBinaryOperation(ExpressionTreeNodePtr& tree, mymath::TokenType op, ExpressionTreeNodePtr& other)
   {
-    mymath::ExpressionTreeNode* new_tree = new mymath::ExpressionTreeNode(mymath::Token(nullptr,op));
+    ExpressionTreeNodePtr new_tree = new mymath::ExpressionTreeNode(mymath::Token(nullptr,op));
     new_tree->children.push_back(tree);
     new_tree->children.push_back(new mymath::ExpressionTreeNode(*other));
     tree = new_tree;
   }
 
-  void applyUnaryOperation(mymath::ExpressionTreeNode*& tree, mymath::TokenType op)
+  void applyUnaryOperation(ExpressionTreeNodePtr& tree, mymath::TokenType op)
   {
-    mymath::ExpressionTreeNode* new_tree = new mymath::ExpressionTreeNode(mymath::Token(nullptr,op));
+    ExpressionTreeNodePtr new_tree = new mymath::ExpressionTreeNode(mymath::Token(nullptr,op));
     new_tree->children.push_back(tree);
     tree = new_tree;
   }

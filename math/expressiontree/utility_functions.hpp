@@ -6,40 +6,34 @@
 namespace mymath
 {
 
-  bool isAddNode(ExpressionTreeNode* tree)
+  bool isAddNode(ExpressionTreeNodePtr tree)
   {
     return (tree->data.type == OP_ADD);
   }
-  bool isMulNode(ExpressionTreeNode* tree)
+  bool isMulNode(ExpressionTreeNodePtr tree)
   {
     return (tree->data.type == OP_MULTIPLY);
   }
-  bool isDivNode(ExpressionTreeNode* tree)
+  bool isDivNode(ExpressionTreeNodePtr tree)
   {
     return (tree->data.type == OP_DIVIDE);
   }
-  bool isMulDivNode(ExpressionTreeNode* tree)
+  bool isMulDivNode(ExpressionTreeNodePtr tree)
   {
     return (isDivNode(tree) || isMulNode(tree));
   }
-  bool isPowNode(ExpressionTreeNode* tree)
+  bool isPowNode(ExpressionTreeNodePtr tree)
   {
     return (tree->data.type == OP_POWER);
   }
-  bool isMulChainNode(ExpressionTreeNode* tree)
+  bool isMulChainNode(ExpressionTreeNodePtr tree)
   {
     return (tree->data.type == DT_MUL_CHAIN);
   }
-  bool isAddChainNode(ExpressionTreeNode* tree)
+  bool isAddChainNode(ExpressionTreeNodePtr tree)
   {
     return (tree->data.type == DT_SUM_CHAIN);
   }
-
-  void simpleCollectLikeTerms(ExpressionTreeNode* tree)
-  {
-    ;
-  }
-
 }
 
 #endif

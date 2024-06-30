@@ -342,6 +342,7 @@ namespace mymath
     }
      *this = std::move(c);
   }
+  
   template<typename T>
   void matn<T>::operator*=(const T& other)
   {
@@ -358,9 +359,25 @@ namespace mymath
       data[i] *= other;
     }
   }
+  template<typename T>
+  void matn<T>::operator/=(const T& other)
+  {
+    for(int i = 0; i < width*height; i++)
+    {
+      data[i] /= other;
+    }
+  }
+  template<typename T>
+  void vecn<T>::operator/=(const T& other)
+  {
+    for(int i = 0; i < height; i++)
+    {
+      data[i] /= other;
+    }
+  }
 
   template<typename T>
-  mymath::vecn<T> gaussianInverse(const mymath::matn<T>& a)
+  mymath::matn<T> gaussianInverse(const mymath::matn<T>& a)
   {
     mymath::matn<T> augmented_mat(a.width*2, a.height);
     for(int row = 0; row < augmented_mat.height; row++)
@@ -394,6 +411,24 @@ namespace mymath
       }
     }
     return augmented_mat;
+  }
+
+  template<typename T>
+  matn<T> pow(const matn<T>& base, int exponent)
+  {
+    if(exponent != 0)
+    {
+      matn<T> currentResult(base);
+      for(int exp_iteration = 1; exp_iteration < exponent; exp_iteration++)
+      {
+        currentResult *= base;
+      }
+      return currentResult;
+    }
+    else
+    {
+      return identity_matn(base.width, base.height);
+    }
   }
 
   template<typename T>

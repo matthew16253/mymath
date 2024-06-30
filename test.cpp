@@ -6,7 +6,7 @@ int main()
   using namespace mymath;
 
 
-  ExpressionTreeNode* node = new ExpressionTreeNode(Token(nullptr, OP_POWER));
+  ExpressionTreeNodePtr node = new ExpressionTreeNode(Token(nullptr, OP_POWER));
   node->children.push_back(new ExpressionTreeNode(Token(nullptr, OP_MULTIPLY)));
     node->children.at(0)->children.push_back(new ExpressionTreeNode(Token(nullptr, OP_MULTIPLY)));
       node->children.at(0)->children.at(0)->children.push_back(new ExpressionTreeNode(Token(new long double(1), DT_REAL)));

@@ -5,12 +5,21 @@
 #include<algorithm>
 #include<memory>
 #include<complex>
+#include<cmath>
 
 
 
 namespace mymath
 {
+  bool isInt(long double a)
+  {
+    long double intPart;
+    long double result = std::modf(a, &intPart);
+    return (a - result == 0.0L);
+  }
+
   class ExpressionTreeNode;
+  struct ExpressionTreeNodePtr;
   class Token;
   
   template<typename T>
@@ -51,6 +60,8 @@ namespace mymath
 
   bool isVar(TokenType type){return (type > VAR_BEGIN && type < VAR_END);}
   bool isOp(TokenType type){return (type > OPERATORS_BEGIN && type < OPERATORS_END);}
+  bool isData(TokenType type){return (type > DATA_BEGIN && type < DATA_END);}
+  bool isError(TokenType type){return (type > ERROR_BEGIN && type < ERROR_END);}
   std::ostream& operator<<(std::ostream& os, TokenType type)
   {
     switch (type)
@@ -87,7 +98,11 @@ namespace mymath
       void operator*=(const matn<T>& other);
       void operator*=(const vecn<T>& other);
       void operator*=(const T& other);
+      void operator/=(const T& other);
   };
+
+  template<typename T>
+  matn<T> identity_matn(int width);
 
   template<typename T>
   class vecn
@@ -109,6 +124,7 @@ namespace mymath
       void operator*=(const matn<T>& other);
       void operator*=(const vecn<T>& other);
       void operator*=(const T& other);
+      void operator/=(const T& other);
 
   };
 
@@ -131,16 +147,20 @@ namespace mymath
   };
 
 
-  bool isAddNode(ExpressionTreeNode* tree);
-  bool isMulNode(ExpressionTreeNode* tree);
-  bool isDivNode(ExpressionTreeNode* tree);
-  bool isPowNode(ExpressionTreeNode* tree);
-  bool isMulChainNode(ExpressionTreeNode* tree);
-  bool isAddChainNode(ExpressionTreeNode* tree);
+  bool isAddNode(ExpressionTreeNodePtr tree);
+  bool isMulNode(ExpressionTreeNodePtr tree);
+  bool isDivNode(ExpressionTreeNodePtr tree);
+  bool isPowNode(ExpressionTreeNodePtr tree);
+  bool isMulChainNode(ExpressionTreeNodePtr tree);
+  bool isAddChainNode(ExpressionTreeNodePtr tree);
 
-  ExpressionTreeNode* getPolyTermCoefficient(ExpressionTreeNode* tree);
-  ExpressionTreeNode* getPolyTermPower(ExpressionTreeNode* tree);
-  TokenType getPolyNumVar(); // only if has 1 variable
+  ExpressionTreeNodePtr getPolyTermCoefficient(ExpressionTreeNodePtr tree);
+  ExpressionTreeNodePtr getPolyTermPower(ExpressionTreeNodePtr tree);
+
+  bool arithmeticIsValid(ExpressionTreeNodePtr tree);
+  void simplifyConstantNumericalValues(ExpressionTreeNodePtr& tree);
+  void recursiveArithmeticValidityCheck(ExpressionTreeNodePtr tree, bool& isValid);
+  void simpleCollectLikeTerms(ExpressionTreeNodePtr& tree);
 
 
   class Token
@@ -163,44 +183,80 @@ namespace mymath
       ~Token();
       Token(const Token& other);
       Token(Token&& other);
+
+      Token(long double other);
+      Token(const std::complex<Token>& other);
+      Token(const vecn<Token>& other);
+      Token(const matn<Token>& other);
+      Token(const ExpressionTreeNode& other);
+
+      Token operator=(long double other);
+      Token operator=(const std::complex<Token>& other);
+      Token operator=(const vecn<Token>& other);
+      Token operator=(const matn<Token>& other);
+      Token operator=(const ExpressionTreeNode& other);
+
+
       Token& operator=(Token other);
       void empty();
 
       void operator+=(const Token& b);
       void operator-=(const Token& b);
       void operator*=(const Token& a);
+      void operator/=(const Token& a);
   };
+
+  void applyTokenOperation(Token& token, TokenType op, const Token& other);
+  Token getTokenOperationResult(const Token& a, TokenType op, const Token& b);
 
   
   class ExpressionTreeNode
   {
     public:
-      std::vector<ExpressionTreeNode*> children;
+      std::vector<ExpressionTreeNodePtr> children;
       Token data;
       ExpressionTreeNode();
       ExpressionTreeNode(const Token& _data);
       ExpressionTreeNode(Token&& _data);
-      ExpressionTreeNode(const ExpressionTreeNode& other);
+      ExpressionTreeNode(ExpressionTreeNode& other);
       ExpressionTreeNode(ExpressionTreeNode&& other);
       ExpressionTreeNode& operator=(ExpressionTreeNode other);
       ~ExpressionTreeNode();
+
   };
 
-  void applyBinaryOperation(mymath::ExpressionTreeNode*& tree, mymath::TokenType op, const mymath::Token& other);
-  void applyBinaryOperation(const mymath::Token& other, mymath::TokenType op, mymath::ExpressionTreeNode*& tree);
-  void applyBinaryOperation(mymath::ExpressionTreeNode*& tree, mymath::TokenType op, mymath::ExpressionTreeNode*& other);
-  void applyUnaryOperation(mymath::ExpressionTreeNode*& tree, mymath::TokenType op);
 
-  void formatArithmeticChains(mymath::ExpressionTreeNode*& tree);
+  struct ExpressionTreeNodePtr
+  {
+    public:
+      ExpressionTreeNode* data;
+      ExpressionTreeNodePtr(ExpressionTreeNode* tree) : data(tree)  {}
+      ExpressionTreeNodePtr() : data(nullptr)  {}
+      operator ExpressionTreeNode*(){return data;}
+      ExpressionTreeNode* operator->(){return data;}
+      ExpressionTreeNode& operator*(){return *data;}
+  };
 
-  void formatAddChain(mymath::ExpressionTreeNode*& tree);
-  void getAddNodes(mymath::ExpressionTreeNode*& currentNode,std::vector<mymath::ExpressionTreeNode*>& currentAddNodes);
+  bool operator==(const ExpressionTreeNode& a, const ExpressionTreeNode& b);
+  bool operator==(ExpressionTreeNodePtr a, ExpressionTreeNodePtr b);
+  bool operator==(const Token& a, const Token& b);
 
-  void formatMulDivChain(mymath::ExpressionTreeNode*& tree, bool aboveIsNumerator = true);
-  void getMulDivNodes(mymath::ExpressionTreeNode*& currentNode,std::vector<mymath::ExpressionTreeNode*>& currentNumeratorNodes, std::vector<mymath::ExpressionTreeNode*>& currentDenominatorNodes, bool aboveIsNumerator = true);
+  void applyBinaryOperation(ExpressionTreeNodePtr& tree, mymath::TokenType op, const mymath::Token& other);
+  void applyBinaryOperation(const mymath::Token& other, mymath::TokenType op, ExpressionTreeNodePtr& tree);
+  void applyBinaryOperation(ExpressionTreeNodePtr& tree, mymath::TokenType op, ExpressionTreeNodePtr& other);
+  void applyUnaryOperation(ExpressionTreeNodePtr& tree, mymath::TokenType op);
 
-  void formatPowNodes(ExpressionTreeNode*& tree);
-  void getPowNodes(ExpressionTreeNode*& currentNode, std::vector<ExpressionTreeNode*>& currentPowNodes, ExpressionTreeNode*& base);
+
+  void formatArithmeticChains(ExpressionTreeNodePtr& tree);
+
+  void formatAddChain(ExpressionTreeNodePtr& tree);
+  void getAddNodes(ExpressionTreeNodePtr& currentNode,std::vector<ExpressionTreeNodePtr>& currentAddNodes);
+
+  void formatMulDivChain(ExpressionTreeNodePtr& tree, bool aboveIsNumerator = true);
+  void getMulDivNodes(ExpressionTreeNodePtr& currentNode,std::vector<ExpressionTreeNodePtr>& currentNumeratorNodes, std::vector<ExpressionTreeNodePtr>& currentDenominatorNodes, bool aboveIsNumerator = true);
+
+  void formatPowNodes(ExpressionTreeNodePtr& tree);
+  void getPowNodes(ExpressionTreeNodePtr& currentNode, std::vector<ExpressionTreeNodePtr>& currentPowNodes, ExpressionTreeNodePtr& base);
 
 
 
@@ -208,6 +264,7 @@ namespace mymath
   mymath::Token operator-(const mymath::Token& a, const mymath::Token& b);
   mymath::Token operator-(const mymath::Token& a);
   mymath::Token operator*(const mymath::Token& a, const mymath::Token& b);
+  Token operator/(const Token& a, const Token& b);
 
 
 
@@ -234,6 +291,9 @@ namespace mymath
   mymath::vecn<T> operator*(const mymath::matn<T>& a, const mymath::vecn<T>& b);
   template<typename T>
   mymath::matn<T> operator+(const mymath::matn<T>& a, const mymath::vecn<T>& b);
+
+  template<typename T>
+  matn<T> pow(const matn<T>& base, int exponent);
 
 
   template<typename T>
@@ -263,8 +323,8 @@ namespace mymath
 
 
   std::ostream& operator<<(std::ostream& os, const Token& token);
-  void print(ExpressionTreeNode* tree);
-  void recursive_print(ExpressionTreeNode* tree, int currentIndent);
+  void print(ExpressionTreeNodePtr tree);
+  void recursive_print(ExpressionTreeNodePtr tree, int currentIndent);
 }
 
 // template<>

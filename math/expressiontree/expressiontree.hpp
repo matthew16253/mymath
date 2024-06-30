@@ -11,7 +11,7 @@ namespace mymath
   ExpressionTreeNode::ExpressionTreeNode() : data(Token(nullptr, mymath::TokenType::DT_UNINIT)), children({}) {}
   ExpressionTreeNode::ExpressionTreeNode(const Token& _data) : data(_data), children({})  {}
   ExpressionTreeNode::ExpressionTreeNode(Token&& _data) : data(_data), children({})  {}
-  ExpressionTreeNode::ExpressionTreeNode(const ExpressionTreeNode& other)
+  ExpressionTreeNode::ExpressionTreeNode(ExpressionTreeNode& other)
   {
     data = other.data;
     for(int i = 0; i < other.children.size(); i++)
@@ -23,7 +23,7 @@ namespace mymath
   {
     data = other.data;
     children = other.children;
-    other.children = std::vector<ExpressionTreeNode*>();
+    other.children.clear();
   }
   ExpressionTreeNode& ExpressionTreeNode::operator=(ExpressionTreeNode other)
   {
@@ -37,11 +37,25 @@ namespace mymath
       delete children.at(index);
     }
   }
-  void print(ExpressionTreeNode* tree)
+  bool operator==(ExpressionTreeNode a, ExpressionTreeNode b)
+  {
+    if(a.children.size() != 0 && b.children.size() != 0)
+    {
+      if(a.children.size() != b.children.size()){return false;}
+      else if(!(a.data == b.data)){return false;}
+
+      for(int index = 0; index < a.children.size(); index++)
+      {
+        if(!(a.children.at(index) == b.children.at(index))){return false;}
+      }
+    }
+    return true;
+  }
+  void print(ExpressionTreeNodePtr tree)
   {
     recursive_print(tree, 0);
   }
-  void recursive_print(ExpressionTreeNode* tree, int currentIndent)
+  void recursive_print(ExpressionTreeNodePtr tree, int currentIndent)
   {
     if(isOp(tree->data.type))
     {

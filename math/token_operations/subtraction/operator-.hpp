@@ -43,7 +43,7 @@ mymath::Token operator-(const mymath::Token& a)
     }
     case DT_ALGEBRAIC_EXPR:
     {
-      ExpressionTreeNode* new_tree = new_token.expr_ptr;
+      ExpressionTreeNodePtr new_tree = new_token.expr_ptr;
       applyUnaryOperation(new_tree, OP_NEGATE);
       new_token.dataptr = new_tree;
       break;
