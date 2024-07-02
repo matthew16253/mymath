@@ -66,7 +66,7 @@ namespace mymath
 					}
 					else
 					{
-							if(isVar(currentResult.operands2_error_ptr->operands[0]) || isVar(currentResult.operands2_error_ptr->operands[1]))      // CHANGE THE ERROR MESSAGES TO TAKE AN OPERATION AS WELL!!!!!!!!!!!!!!!!
+						if(isVar(currentResult.operands2_error_ptr->operands[0]) || isVar(currentResult.operands2_error_ptr->operands[1]))      // CHANGE THE ERROR MESSAGES TO TAKE AN OPERATION AS WELL!!!!!!!!!!!!!!!!
 						{
 							currentResult = previousResult;
 						}
@@ -102,19 +102,36 @@ namespace mymath
 				if(isMulChainNode(tree->children.at(sumIndex)))
 				{
 					std::vector<ExpressionTreeNodePtr> varList;
-					std::vector<ExpressionTreeNodePtr> partsToCollect;
+					ExpressionTreeNodePtr partsToCollect;
+
+          bool shouldStopSearching = false;
+
 					for(int mulIndex = 0; mulIndex < tree->children.at(sumIndex)->children.size(); mulIndex++)
 					{
 						if(isVar(tree->children.at(sumIndex)->children.at(mulIndex)->data.type))
 						{
 							varList.push_back(tree->children.at(sumIndex)->children.at(mulIndex));
 						}
+						else if(tree->children.at(sumIndex)->children.at(mulIndex)->data.type == DT_REAL)
+						{
+						  partsToCollect.addRealNodeToRealNode(tree->children.at(sumIndex)->children.at(mulIndex));
+						}
+						else if(isRealFraction(tree->children.at(sumIndex)->children.at(mulIndex)))
+						{
+							partsToCollect.addRealFractionToRealNode(tree->children.at(sumIndex)->children.at(mulIndex));
+						}
 						else
 						{
-							simpleCollectLikeTerms(tree->children.at(sumIndex)->children.at(mulIndex));
-						  partsToCollect.push_back(tree->children.at(sumIndex)->children.at(mulIndex));
+							shouldStopSearching = true;
+							break;
 						}
 					}
+					if(shouldStopSearching)
+					{
+						varList = {new ExpressionTreeNode(Token(1))};
+						partsToCollect = tree->children.at(sumIndex)->children;
+					}
+
 					likeVariableMap[varList].insert(likeVariableMap[varList].end(), partsToCollect.begin(), partsToCollect.end());
 
 					tree->children.at(sumIndex)->children.clear();
@@ -129,6 +146,25 @@ namespace mymath
 
 			tree->children.clear();
 
+			
+			for(auto& [likeTerm, collectedPart] : likeVariableMap)
+			{
+				if(collectedPart.size() == 1)
+				{
+					ExpressionTreeNodePtr new_term = new ExpressionTreeNode(Token(nullptr, DT_MUL_CHAIN));
+					if(collectedPart.at(0)->data != 1)
+					{
+						new_term = likeTerm;
+					}
+					else
+					{
+						new_term = 
+					}
+
+
+					tree->children.push_back(new_term);
+				}
+			}
 			// Add the nodes in the map to tree :)
 		}
 	}
