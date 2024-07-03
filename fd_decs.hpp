@@ -62,6 +62,7 @@ namespace mymath
   bool isOp(TokenType type){return (type > OPERATORS_BEGIN && type < OPERATORS_END);}
   bool isData(TokenType type){return (type > DATA_BEGIN && type < DATA_END);}
   bool isError(TokenType type){return (type > ERROR_BEGIN && type < ERROR_END);}
+  bool isReal(TokenType type){return (type==DT_REAL);}
   std::ostream& operator<<(std::ostream& os, TokenType type)
   {
     switch (type)

@@ -92,82 +92,73 @@ namespace mymath
 
 
 	// All numeric constants should be simplified beforehand
-	void simpleCollectLikeTerms(ExpressionTreeNodePtr& tree)
-	{
-		if(isAddChainNode(tree))
-		{
-			std::map<std::vector<ExpressionTreeNodePtr>, std::vector<ExpressionTreeNodePtr>> likeVariableMap;
-			for(int sumIndex = 0; sumIndex < tree->children.size(); sumIndex++)
-			{
-				if(isMulChainNode(tree->children.at(sumIndex)))
-				{
-					std::vector<ExpressionTreeNodePtr> varList;
-					ExpressionTreeNodePtr partsToCollect;
-
+  void simpleCollectLikeTerms(ExpressionTreeNodePtr& tree)
+  {
+    if(isAddChainNode(tree))
+    {
+      std::map<std::vector<ExpressionTreeNodePtr>, ExpressionTreeNodePtr> likeVariableMap;
+      for(int sumIndex = 0; sumIndex < tree->children.size(); sumIndex++)
+      {
+        if(isMulChainNode(tree->children.at(sumIndex)))
+        {
+          std::vector<ExpressionTreeNodePtr> varList;
+          ExpressionTreeNodePtr partsToCollect;
           bool shouldStopSearching = false;
-
-					for(int mulIndex = 0; mulIndex < tree->children.at(sumIndex)->children.size(); mulIndex++)
+					if(isReal(tree->children.at(sumIndex)->children.at(0)->data.type))
 					{
-						if(isVar(tree->children.at(sumIndex)->children.at(mulIndex)->data.type))
-						{
-							varList.push_back(tree->children.at(sumIndex)->children.at(mulIndex));
-						}
-						else if(tree->children.at(sumIndex)->children.at(mulIndex)->data.type == DT_REAL)
-						{
-						  partsToCollect.addRealNodeToRealNode(tree->children.at(sumIndex)->children.at(mulIndex));
-						}
-						else if(isRealFraction(tree->children.at(sumIndex)->children.at(mulIndex)))
-						{
-							partsToCollect.addRealFractionToRealNode(tree->children.at(sumIndex)->children.at(mulIndex));
-						}
-						else
-						{
-							shouldStopSearching = true;
-							break;
-						}
+						partsToCollect = tree->children.at(sumIndex)->children.at(0);
+						varList = std::vector<ExpressionTreeNodePtr>(tree->children.at(sumIndex)->children.begin(),tree->children.at(sumIndex)->children.end());
+						if(static_cast<ExpressionTreeNode*>(likeVariableMap[varList]) == nullptr){likeVariableMap[varList] = new ExpressionTreeNode(Token(1));}
+						else if(isReal(likeVariableMap[varList]->data.type)){addRealNodeToRealNode(likeVariableMap[varList], partsToCollect);}
+						else if(isRealFraction(likeVariableMap[varList])){addRealNodeToRealFraction(likeVariableMap[varList], partsToCollect);}
 					}
-					if(shouldStopSearching)
+					else if(isRealFraction(tree->children.at(sumIndex)->children.at(0)))
 					{
-						varList = {new ExpressionTreeNode(Token(1))};
-						partsToCollect = tree->children.at(sumIndex)->children;
-					}
-
-					likeVariableMap[varList].insert(likeVariableMap[varList].end(), partsToCollect.begin(), partsToCollect.end());
-
-					tree->children.at(sumIndex)->children.clear();
-					delete tree->children.at(sumIndex);
-				}
-
-				else if(isVar(tree->children.at(sumIndex)->data.type))
-				{
-					likeVariableMap[{(tree->children.at(sumIndex))}].push_back(new ExpressionTreeNode(Token(1)));
-				}
-			}
-
-			tree->children.clear();
-
-			
-			for(auto& [likeTerm, collectedPart] : likeVariableMap)
-			{
-				if(collectedPart.size() == 1)
-				{
-					ExpressionTreeNodePtr new_term = new ExpressionTreeNode(Token(nullptr, DT_MUL_CHAIN));
-					if(collectedPart.at(0)->data != 1)
-					{
-						new_term = likeTerm;
+						partsToCollect = tree->children.at(sumIndex)->children.at(0);
+						varList = std::vector<ExpressionTreeNodePtr>(tree->children.at(sumIndex)->children.begin(),tree->children.at(sumIndex)->children.end());
+						if(static_cast<ExpressionTreeNode*>(likeVariableMap[varList]) == nullptr){likeVariableMap[varList] = new ExpressionTreeNode(Token(1));}
+						else if(isReal(likeVariableMap[varList]->data.type)){addRealFractionToRealNode(likeVariableMap[varList], partsToCollect);}
+						else if(isRealFraction(likeVariableMap[varList])){addRealFractionToRealFraction(likeVariableMap[varList], partsToCollect);}
 					}
 					else
 					{
-						new_term = 
+						shouldStopSearching = true;
+						break;
 					}
+          if(shouldStopSearching)
+          {
+            varList = tree->children.at(sumIndex)->children;
+            partsToCollect = new ExpressionTreeNode(Token(1));
+          }
+          tree->children.at(sumIndex)->children.clear();
+          delete tree->children.at(sumIndex);
+        }
+        else if(isVar(tree->children.at(sumIndex)->data.type))
+        {
+          likeVariableMap[{(tree->children.at(sumIndex))}] = (new ExpressionTreeNode(Token(1)));
+        }
+      }
 
 
-					tree->children.push_back(new_term);
-				}
-			}
-			// Add the nodes in the map to tree :)
-		}
-	}
+      tree->children.clear();
+      for(auto& [likeTerm, collectedPart] : likeVariableMap)
+      {
+        if(isReal(collectedPart->data.type)  &&  collectedPart->data == 1)
+        {
+          ExpressionTreeNodePtr new_term = new ExpressionTreeNode(Token(nullptr, DT_MUL_CHAIN));
+					new_term->children = likeTerm;
+          tree->children.push_back(new_term);
+        }
+        else
+        {
+          ExpressionTreeNodePtr new_term = new ExpressionTreeNode(Token(nullptr, DT_MUL_CHAIN));
+          new_term->children = {collectedPart};
+          new_term->children.insert(new_term->children.end(), likeTerm.begin(), likeTerm.end());
+          tree->children.push_back(new_term);
+        }
+      }
+    }
+  }
 }
 
 #endif
