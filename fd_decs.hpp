@@ -6,16 +6,30 @@
 #include<memory>
 #include<complex>
 #include<cmath>
+#include<variant>
+#include<boost/multiprecision/cpp_dec_float.hpp>
+#include<type_traits>
 
-
+template<typename command, typename ...Args>
+consteval bool functionExists()
+{
+  ;
+}
 
 namespace mymath
 {
+
+  template<typename T>
+  bool operator!=(T a, T b)
+  {
+    return !(a==b);
+  }
+
   bool isInt(long double a)
   {
     long double intPart;
-    long double result = std::modf(a, &intPart);
-    return (a - result == 0.0L);
+    std::modf(a, &intPart);
+    return (a == intPart);
   }
 
   class ExpressionTreeNode;
@@ -35,10 +49,6 @@ namespace mymath
     OP_SIN,OP_COS,OP_TAN,OP_ASIN,OP_ACOS,OP_ATAN,OP_SINH,OP_COSH,OP_TANH,
     OP_LOG,OP_LOGAB,OP_NATURAL_LOG,OP_EXP,OP_SQRT,OP_CUBEROOT,OP_ABS,DT_SUM_CHAIN, DT_MUL_CHAIN,
     OPERATORS_END,
-
-    DATA_BEGIN,
-    DT_UNINIT,DT_REAL,DT_COMPLEX,DT_VECTOR,DT_MATRIX,DT_ALGEBRAIC_EXPR,
-    DATA_END,
 
     VAR_BEGIN,
     VAR_L_A,VAR_L_B,VAR_L_C,VAR_L_D,VAR_L_E,VAR_L_F,VAR_L_G,VAR_L_H,VAR_L_I,
@@ -60,9 +70,31 @@ namespace mymath
 
   bool isVar(TokenType type){return (type > VAR_BEGIN && type < VAR_END);}
   bool isOp(TokenType type){return (type > OPERATORS_BEGIN && type < OPERATORS_END);}
-  bool isData(TokenType type){return (type > DATA_BEGIN && type < DATA_END);}
   bool isError(TokenType type){return (type > ERROR_BEGIN && type < ERROR_END);}
-  bool isReal(TokenType type){return (type==DT_REAL);}
+
+  bool isVar(Token& token)
+  {
+    if(std::holds_alternative<TokenType>(token.dataVariant)){return isVar(std::get<TokenType>(token.dataVariant));}
+    return false;
+  }
+  bool isOp(Token& token)
+  {
+    if(std::holds_alternative<TokenType>(token.dataVariant)){return isOp(std::get<TokenType>(token.dataVariant));}
+    return false;
+  }
+  bool isError(Token& token)
+  {
+    if(std::holds_alternative<TokenType>(token.dataVariant)){return isError(std::get<TokenType>(token.dataVariant));}
+    return false;
+  }
+
+
+  bool isReal(Token& token){return (std::holds_alternative<long double*>(token.dataVariant));}
+  bool isComplex(Token& token){return std::holds_alternative<std::complex<Token>*>(token.dataVariant);}
+  bool isVector(Token& token){return std::holds_alternative<vecn<Token>*>(token.dataVariant);}
+  bool isMatrix(Token& token){return std::holds_alternative<matn<Token>*>(token.dataVariant);}
+  bool isExpr(Token& token){return std::holds_alternative<ExpressionTreeNodePtr>(token.dataVariant);}
+  bool isData(Token& token){return isReal(token) || isComplex(token) || isVector(token) || isMatrix(token) || isExpr(token);}
   std::ostream& operator<<(std::ostream& os, TokenType type)
   {
     switch (type)
@@ -148,12 +180,12 @@ namespace mymath
   };
 
 
-  bool isAddNode(ExpressionTreeNodePtr tree);
-  bool isMulNode(ExpressionTreeNodePtr tree);
-  bool isDivNode(ExpressionTreeNodePtr tree);
-  bool isPowNode(ExpressionTreeNodePtr tree);
-  bool isMulChainNode(ExpressionTreeNodePtr tree);
-  bool isAddChainNode(ExpressionTreeNodePtr tree);
+  bool isAdd(Token& tree);
+  bool isMul(Token& tree);
+  bool isDiv(Token& tree);
+  bool isPow(Token& tree);
+  bool isMulChain(Token& tree);
+  bool isAddChain(Token& tree);
 
   ExpressionTreeNodePtr getPolyTermCoefficient(ExpressionTreeNodePtr tree);
   ExpressionTreeNodePtr getPolyTermPower(ExpressionTreeNodePtr tree);
@@ -167,44 +199,28 @@ namespace mymath
   class Token
   {
     public:
-      union
-      {
-        void* dataptr;
-        long double* real_ptr;
-        std::complex<Token>* complex_ptr;
-        matn<Token>* mat_ptr;
-        vecn<Token>* vec_ptr;
-        ExpressionTreeNode* expr_ptr;
-      };
-      TokenType type;
+      std::variant<std::nullptr_t, long double*, std::complex<Token>*, matn<Token>*, vecn<Token>*, ExpressionTreeNodePtr, InfoLog<2, TokenType>*, TokenType> dataVariant;
       Token();
-      Token(void* _dataptr,TokenType _type);
-      //Token(TokenType _type);
 
       ~Token();
       Token(const Token& other);
       Token(Token&& other);
+      template<typename T>
+      Token(T other);
 
-      Token(long double other);
-      Token(const std::complex<Token>& other);
-      Token(const vecn<Token>& other);
-      Token(const matn<Token>& other);
-      Token(const ExpressionTreeNode& other);
-
-      Token operator=(long double other);
-      Token operator=(const std::complex<Token>& other);
-      Token operator=(const vecn<Token>& other);
-      Token operator=(const matn<Token>& other);
-      Token operator=(const ExpressionTreeNode& other);
+      template<typename T>
+      Token operator=(T other);
 
 
       Token& operator=(Token other);
-      void empty();
 
       void operator+=(const Token& b);
       void operator-=(const Token& b);
       void operator*=(const Token& a);
       void operator/=(const Token& a);
+
+      template<typename T>
+      T get();
   };
 
   void applyTokenOperation(Token& token, TokenType op, const Token& other);
@@ -236,11 +252,14 @@ namespace mymath
       operator ExpressionTreeNode*(){return data;}
       ExpressionTreeNode* operator->(){return data;}
       ExpressionTreeNode& operator*(){return *data;}
+      void operator delete(void* ptr){delete static_cast<ExpressionTreeNode*>(ptr);}
   };
 
   bool operator==(const ExpressionTreeNode& a, const ExpressionTreeNode& b);
   bool operator==(ExpressionTreeNodePtr a, ExpressionTreeNodePtr b);
   bool operator==(const Token& a, const Token& b);
+
+  void simplifyRealFraction(ExpressionTreeNodePtr tree);
 
   void applyBinaryOperation(ExpressionTreeNodePtr& tree, mymath::TokenType op, const mymath::Token& other);
   void applyBinaryOperation(const mymath::Token& other, mymath::TokenType op, ExpressionTreeNodePtr& tree);
@@ -312,8 +331,7 @@ namespace mymath
   }
   void swap(mymath::Token& a, mymath::Token& b)
   {
-    std::swap(a.dataptr,b.dataptr);
-    std::swap(a.type,b.type);
+    std::swap(a.dataVariant, b.dataVariant);
   }
   void swap(mymath::ExpressionTreeNode& a, mymath::ExpressionTreeNode& b)
   {
@@ -326,6 +344,11 @@ namespace mymath
   std::ostream& operator<<(std::ostream& os, const Token& token);
   void print(ExpressionTreeNodePtr tree);
   void recursive_print(ExpressionTreeNodePtr tree, int currentIndent);
+
+  typedef std::variant<std::nullptr_t, long double*, std::complex<Token>*,
+   matn<Token>*, vecn<Token>*, ExpressionTreeNodePtr, InfoLog<2, TokenType>*, TokenType>
+     tokenVariant;
+
 }
 
 // template<>

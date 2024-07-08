@@ -1,6 +1,8 @@
 #ifndef EXPR_UTILITY_FUNCTIONS_HPP
 #define EXPR_UTILITY_FUNCTIONS_HPP
 
+#include<numeric>
+
 #include"../../fd_decs.hpp"
 
 namespace mymath
@@ -8,15 +10,27 @@ namespace mymath
 
   bool isAddNode(ExpressionTreeNodePtr tree)
   {
-    return (tree->data.type == OP_ADD);
+    if(std::holds_alternative<TokenType>(tree->data.dataVariant))
+    {
+      return std::get<TokenType>(tree->data.dataVariant) == OP_ADD;
+    }
+    return false;
   }
   bool isMulNode(ExpressionTreeNodePtr tree)
   {
-    return (tree->data.type == OP_MULTIPLY);
+    if(std::holds_alternative<TokenType>(tree->data.dataVariant))
+    {
+      return std::get<TokenType>(tree->data.dataVariant) == OP_MULTIPLY;
+    }
+    return false;
   }
   bool isDivNode(ExpressionTreeNodePtr tree)
   {
-    return (tree->data.type == OP_DIVIDE);
+    if(std::holds_alternative<TokenType>(tree->data.dataVariant))
+    {
+      return std::get<TokenType>(tree->data.dataVariant) == OP_DIVIDE;
+    }
+    return false;
   }
   bool isMulDivNode(ExpressionTreeNodePtr tree)
   {
@@ -24,51 +38,59 @@ namespace mymath
   }
   bool isPowNode(ExpressionTreeNodePtr tree)
   {
-    return (tree->data.type == OP_POWER);
+    if(std::holds_alternative<TokenType>(tree->data.dataVariant))
+    {
+      return std::get<TokenType>(tree->data.dataVariant) == OP_POWER;
+    }
+    return false;
   }
   bool isMulChainNode(ExpressionTreeNodePtr tree)
   {
-    return (tree->data.type == DT_MUL_CHAIN);
+    if(std::holds_alternative<TokenType>(tree->data.dataVariant))
+    {
+      return std::get<TokenType>(tree->data.dataVariant) == DT_MUL_CHAIN;
+    }
+    return false;
   }
   bool isAddChainNode(ExpressionTreeNodePtr tree)
   {
-    return (tree->data.type == DT_SUM_CHAIN);
+    if(std::holds_alternative<TokenType>(tree->data.dataVariant))
+    {
+      return std::get<TokenType>(tree->data.dataVariant) == DT_SUM_CHAIN;
+    }
+    return false;
   }
 
   void addRealNodeToRealNode(ExpressionTreeNodePtr real_this, ExpressionTreeNodePtr real_other)
   {
-    *(real_this->data.real_ptr) += *(real_other->data.real_ptr);
+    *std::get<long double*>(real_this->data.dataVariant) += *std::get<long double*>(real_other->data.dataVariant);
   }
   void addRealNodeToRealFraction(ExpressionTreeNodePtr realFraction_this, ExpressionTreeNodePtr real_other)
   {
-    *(realFraction_this->children.at(0)->data.real_ptr) += (*(realFraction_this->children.at(1)->data.real_ptr)) * (*(real_other->data.real_ptr));
+    *std::get<long double*>(realFraction_this->children.at(0)->data.dataVariant) += (*std::get<long double*>(realFraction_this->children.at(1)->data.dataVariant)) * (*std::get<long double*>(real_other->data.dataVariant));
   }
   void addRealFractionToRealFraction(ExpressionTreeNodePtr realFraction_this, ExpressionTreeNodePtr realFraction_other)
   {
-    *(realFraction_this->children.at(0)->data.real_ptr) = (*(realFraction_this->children.at(0)->data.real_ptr)) * (*(realFraction_this->children.at(1)->data.real_ptr))
+    *std::get<long double*>(realFraction_this->children.at(0)->data.dataVariant) = (*std::get<long double*>(realFraction_this->children.at(0)->data.dataVariant)) * (*std::get<long double*>(realFraction_this->children.at(1)->data.dataVariant))
                                 +
-                                (*(realFraction_other->children.at(0)->data.real_ptr)) * (*(realFraction_this->children.at(1)->data.real_ptr));
-    *(realFraction_this->children.at(1)->data.real_ptr) = (*(realFraction_this->children.at(1)->data.real_ptr)) * (*(realFraction_this->children.at(1)->data.real_ptr));
+                                (*std::get<long double*>(realFraction_other->children.at(0)->data.dataVariant)) * (*std::get<long double*>(realFraction_this->children.at(1)->data.dataVariant));
+    *std::get<long double*>(realFraction_this->children.at(1)->data.dataVariant) = (*std::get<long double*>(realFraction_this->children.at(1)->data.dataVariant)) * (*std::get<long double*>(realFraction_this->children.at(1)->data.dataVariant));
 
     simplifyRealFraction(realFraction_this);
   }
   void addRealFractionToRealNode(ExpressionTreeNodePtr real_this, ExpressionTreeNodePtr realFraction_other)
   {
-    delete real_this;
     ExpressionTreeNodePtr realFraction_other_copy = new ExpressionTreeNode(*realFraction_other);
     addRealNodeToRealFraction(realFraction_other_copy, real_this);
-    real_this = realFraction_other_copy;
+    *real_this = *realFraction_other_copy;
   }
   void simplifyRealFraction(ExpressionTreeNodePtr realFraction_this)
   {
-    int numerator_exponent;
-    int denominator_exponent;
-    std::frexp(*(realFraction_this->children.at(0)->data.real_ptr), &numerator_exponent);
-    std::frexp(*(realFraction_this->children.at(1)->data.real_ptr), &denominator_exponent);
+    // do later pls :DDDD
   }
   bool isRealFraction(ExpressionTreeNodePtr tree)
   {
-    return isDivNode(tree) && isReal(tree->children[0]->data.type) && isReal(tree->children[1]->data.type);
+    return isDivNode(tree) && isReal(tree->children[0]->data) && isReal(tree->children[1]->data);
   }
 }
 

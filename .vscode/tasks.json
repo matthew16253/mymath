@@ -7,6 +7,7 @@
       "command": "C:\\msys64\\ucrt64\\bin\\g++.exe",
       "args": [
         "-fdiagnostics-color=always",
+        "-IC:\\Users\\matth\\Documents\\coding\\cpp\\include\\boost_1_85_0",
         "-g",
         "C:\\Users\\matth\\Documents\\coding\\cpp\\include\\mymath\\test.cpp",
         "-o",

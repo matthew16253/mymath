@@ -12,7 +12,7 @@ namespace mymath
 {
 	void simplifyConstantNumericalValues(ExpressionTreeNodePtr& tree)
 	{
-		if(isOp(tree->data.type))
+		if(isOp(tree->data))
 		{
 			// see if possible to simplify
 
@@ -20,10 +20,10 @@ namespace mymath
 			Token previousResult;
 			for(int index = 0; index < tree->children.size(); index++)
 			{
-				if(isData(tree->children.at(index)->data.type))
+				if(isData(tree->children.at(index)->data))
 				{
-					applyTokenOperation(currentResult, tree->data.type, tree->children.at(index)->data);
-					if(!isError(currentResult.type))
+					applyTokenOperation(currentResult, tree->data.get<TokenType>(), tree->children.at(index)->data);
+					if(!isError(currentResult))
 					{
 							previousResult = currentResult;
 					}
@@ -32,7 +32,7 @@ namespace mymath
 							currentResult = previousResult;
 					}
 				}
-				else if(isOp(tree->children.at(index)->data.type))
+				else if(isOp(tree->children.at(index)->data))
 				{
 					simplifyConstantNumericalValues(tree->children.at(index));
 				}
@@ -51,22 +51,22 @@ namespace mymath
 
 	void recursiveArithmeticValidityCheck(ExpressionTreeNodePtr tree, bool& isValid)
 	{
-		if(isOp(tree->data.type))
+		if(isOp(tree->data))
 		{
 			Token currentResult;
 			Token previousResult;
 			for(int index = 0; index < tree->children.size(); index++)
 			{
-				if(isData(tree->children.at(index)->data.type))
+				if(isData(tree->children.at(index)->data))
 				{
-					applyTokenOperation(currentResult, tree->data.type, tree->children.at(index)->data);
-					if(!isError(currentResult.type))
+					applyTokenOperation(currentResult, tree->data.get<TokenType>(), tree->children.at(index)->data);
+					if(!isError(currentResult))
 					{
 							previousResult = currentResult;
 					}
 					else
 					{
-						if(isVar(currentResult.operands2_error_ptr->operands[0]) || isVar(currentResult.operands2_error_ptr->operands[1]))      // CHANGE THE ERROR MESSAGES TO TAKE AN OPERATION AS WELL!!!!!!!!!!!!!!!!
+						if(isVar(currentResult.get<InfoLog<2, TokenType>*>()->ops[0]) || isVar(currentResult.get<InfoLog<2, TokenType>*>()->ops[1]))      // CHANGE THE ERROR MESSAGES TO TAKE AN OPERATION AS WELL!!!!!!!!!!!!!!!!
 						{
 							currentResult = previousResult;
 						}
@@ -77,7 +77,7 @@ namespace mymath
 						}
 					}
 				}
-				else if(isOp(tree->children.at(index)->data.type))
+				else if(isOp(tree->children.at(index)->data))
 				{
 					recursiveArithmeticValidityCheck(tree->children.at(index), isValid);
 					if(!isValid){return;}
@@ -104,12 +104,12 @@ namespace mymath
           std::vector<ExpressionTreeNodePtr> varList;
           ExpressionTreeNodePtr partsToCollect;
           bool shouldStopSearching = false;
-					if(isReal(tree->children.at(sumIndex)->children.at(0)->data.type))
+					if(isReal(tree->children.at(sumIndex)->children.at(0)->data))
 					{
 						partsToCollect = tree->children.at(sumIndex)->children.at(0);
 						varList = std::vector<ExpressionTreeNodePtr>(tree->children.at(sumIndex)->children.begin(),tree->children.at(sumIndex)->children.end());
 						if(static_cast<ExpressionTreeNode*>(likeVariableMap[varList]) == nullptr){likeVariableMap[varList] = new ExpressionTreeNode(Token(1));}
-						else if(isReal(likeVariableMap[varList]->data.type)){addRealNodeToRealNode(likeVariableMap[varList], partsToCollect);}
+						else if(isReal(likeVariableMap[varList]->data)){addRealNodeToRealNode(likeVariableMap[varList], partsToCollect);}
 						else if(isRealFraction(likeVariableMap[varList])){addRealNodeToRealFraction(likeVariableMap[varList], partsToCollect);}
 					}
 					else if(isRealFraction(tree->children.at(sumIndex)->children.at(0)))
@@ -117,7 +117,7 @@ namespace mymath
 						partsToCollect = tree->children.at(sumIndex)->children.at(0);
 						varList = std::vector<ExpressionTreeNodePtr>(tree->children.at(sumIndex)->children.begin(),tree->children.at(sumIndex)->children.end());
 						if(static_cast<ExpressionTreeNode*>(likeVariableMap[varList]) == nullptr){likeVariableMap[varList] = new ExpressionTreeNode(Token(1));}
-						else if(isReal(likeVariableMap[varList]->data.type)){addRealFractionToRealNode(likeVariableMap[varList], partsToCollect);}
+						else if(isReal(likeVariableMap[varList]->data)){addRealFractionToRealNode(likeVariableMap[varList], partsToCollect);}
 						else if(isRealFraction(likeVariableMap[varList])){addRealFractionToRealFraction(likeVariableMap[varList], partsToCollect);}
 					}
 					else
@@ -133,7 +133,7 @@ namespace mymath
           tree->children.at(sumIndex)->children.clear();
           delete tree->children.at(sumIndex);
         }
-        else if(isVar(tree->children.at(sumIndex)->data.type))
+        else if(isVar(tree->children.at(sumIndex)->data))
         {
           likeVariableMap[{(tree->children.at(sumIndex))}] = (new ExpressionTreeNode(Token(1)));
         }
@@ -143,15 +143,15 @@ namespace mymath
       tree->children.clear();
       for(auto& [likeTerm, collectedPart] : likeVariableMap)
       {
-        if(isReal(collectedPart->data.type)  &&  collectedPart->data == 1)
+        if(isReal(collectedPart->data)  &&  collectedPart->data == 1)
         {
-          ExpressionTreeNodePtr new_term = new ExpressionTreeNode(Token(nullptr, DT_MUL_CHAIN));
+          ExpressionTreeNodePtr new_term = new ExpressionTreeNode(Token(DT_MUL_CHAIN));
 					new_term->children = likeTerm;
           tree->children.push_back(new_term);
         }
         else
         {
-          ExpressionTreeNodePtr new_term = new ExpressionTreeNode(Token(nullptr, DT_MUL_CHAIN));
+          ExpressionTreeNodePtr new_term = new ExpressionTreeNode(Token(DT_MUL_CHAIN));
           new_term->children = {collectedPart};
           new_term->children.insert(new_term->children.end(), likeTerm.begin(), likeTerm.end());
           tree->children.push_back(new_term);
