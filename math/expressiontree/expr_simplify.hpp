@@ -10,153 +10,170 @@
 // already must be formatted properly (arith chain formatting)
 namespace mymath
 {
-	void simplifyConstantNumericalValues(ExpressionTreeNodePtr& tree)
-	{
-		if(isOp(tree->data))
+  void collectLikeTerms(ExpressionTreeNodePtr& tree)
+  {
+    ExpressionTreeNodePtr new_tree;
+    mr::linear_map<ExpressionTreeNodePtr, std::vector<ExpressionTreeNodePtr>> likeTermMap;            // likeTerm, likeTermFactors
+    if(isAddChain(tree))
+    {
+      for(int addIndex = 0; addIndex < tree->children.size(); addIndex++)
+      {
+        if(isMulChain(tree->children[addIndex]))
+        {
+          // the like part of like terms can only be a single variable^something, or a single function^something
+          ;
+        }
+      }
+    }
+  }
+
+  template<TokenType Ignore>
+  void trySimplifyConstants(ExpressionTreeNodePtr& tree)
+  {
+    if constexpr(Ignore != DT_SUM_CHAIN)
+    {
+      if(isAddChain(tree))
+      {
+        trySimplifyConstantsInAddNode(tree);
+      }
+    }
+    else if constexpr(Ignore != DT_MUL_CHAIN)
+    {
+      if(isMulChain(tree))
+      {
+        trySimplifyConstantsInMulNode(tree);
+      }
+    }
+    else if constexpr(Ignore != OP_DIVIDE)
+    {
+      if(isDiv(tree))
+      {
+        trySimplifyConstantsInDivNode(tree);
+      }
+    }
+    else if constexpr(Ignore != OP_POWER)
+    {
+      if(isPow(tree))
+      {
+        trySimplifyConstantsInPowNode(tree);
+      }
+    }
+  }
+  
+  void trySimplifyConstantsInAddNode(ExpressionTreeNodePtr& addNode)
+  {
+    Token currentSum;
+    for(int index = 0; index < addNode->children.size(); index++)
+    {
+      if(isData(addNode->children[index]->data))
+      {
+        currentSum += addNode->children[index]->data;
+        delete addNode->children[index];
+        addNode->children.erase(addNode->children.begin() + index);
+        if(isError(currentSum))
+        {
+          delete addNode;
+          addNode = new ExpressionTreeNode(std::move(currentSum));
+          return;
+        }
+        else
+        {
+          trySimplifyConstants<DT_SUM_CHAIN>(addNode->children[index]);
+        }
+      }
+    }
+    if(!currentSum.is_type<std::nullptr_t>())
+    {
+      addNode->children.push_back(new ExpressionTreeNode(std::move(currentSum)));
+    }
+  }
+
+  template<bool shouldAllowMatricesAndVectors>
+  void trySimplifyConstantsInMulNode(ExpressionTreeNodePtr& mulNode) // real is at end of children
+  {
+    Token currentProduct;
+    for(int index = 0; index < mulNode->children.size(); index++)
+    {
+      if constexpr(!shouldAllowMatricesAndVectors)
+      {
+        if(evaluatesToMatrix(mulNode->children[index]))
+        {
+          *mulNode = ExpressionTreeNode(Token(InfoLog<2, int>(ERROR_INVALID_DIV_OPERANDS, {DT_UNSPECIFIED, DT_MAT})));
+        }
+      }
+      if(isData(mulNode->children[index]->data))
+      {
+        currentProduct *= mulNode->children[index]->data;
+        delete mulNode->children[index];
+        mulNode->children.erase(mulNode->children.begin() + index);
+        if(isError(mulNode->children[index]->data))
+        {
+          delete mulNode;
+          mulNode = new ExpressionTreeNode(std::move(currentProduct));
+          return;
+        }
+      }
+      else
+      {
+        trySimplifyConstants<DT_MUL_CHAIN>(mulNode->children[index]);
+      }
+    }
+    if(!currentProduct.is_type<std::nullptr_t>())
+    {
+      mulNode->children.push_back(new ExpressionTreeNode(std::move(currentProduct)));
+    }
+    return;
+  }
+
+  void trySimplifyConstantsInDivNode(ExpressionTreeNodePtr& divNode)
+  {
+    ExpressionTreeNodePtr numeratorFactor;
+    ExpressionTreeNodePtr denominatorFactor;
+    if(isMulChain(divNode->children[0]))
+    {
+      trySimplifyConstantsInMulNode(divNode->children[0]);
+    }
+    else
+    {
+      trySimplifyConstants<DT_MUL_CHAIN>(divNode->children[0]);
+      return;
+    }
+    if(isMulChain(divNode->children[1]))
+    {
+      trySimplifyConstantsInMulNode<false>(divNode->children[1]);
+    }
+    else
+    {
+      trySimplifyConstants<DT_MUL_CHAIN>(divNode->children[0]);
+      return;
+    }
+
+    if((isReal(divNode->children[0]->data) || isComplex(divNode->children[0]->data)) && (isReal(divNode->children[1]->data) || isComplex(divNode->children[1]->data)))
 		{
-			// see if possible to simplify
-
-			Token currentResult;
-			Token previousResult;
-			for(int index = 0; index < tree->children.size(); index++)
+			Token dataQuotient = numeratorFactor->data / denominatorFactor->data;
+			if(isError(dataQuotient))
 			{
-				if(isData(tree->children.at(index)->data))
-				{
-					applyTokenOperation(currentResult, tree->data.get<TokenType>(), tree->children.at(index)->data);
-					if(!isError(currentResult))
-					{
-							previousResult = currentResult;
-					}
-					else     // i assume this is an error due to precense of a variable (others should be checked for already)
-					{
-							currentResult = previousResult;
-					}
-				}
-				else if(isOp(tree->children.at(index)->data))
-				{
-					simplifyConstantNumericalValues(tree->children.at(index));
-				}
+				return;
+				//  compatible type but size error
 			}
-		}
-	}
-
-
-	bool arithmeticIsValid(ExpressionTreeNodePtr tree)
-	{
-		bool isValid = true;
-		recursiveArithmeticValidityCheck(tree, isValid);
-		return isValid;
-	}
-
-
-	void recursiveArithmeticValidityCheck(ExpressionTreeNodePtr tree, bool& isValid)
-	{
-		if(isOp(tree->data))
-		{
-			Token currentResult;
-			Token previousResult;
-			for(int index = 0; index < tree->children.size(); index++)
-			{
-				if(isData(tree->children.at(index)->data))
-				{
-					applyTokenOperation(currentResult, tree->data.get<TokenType>(), tree->children.at(index)->data);
-					if(!isError(currentResult))
-					{
-							previousResult = currentResult;
-					}
-					else
-					{
-						if(isVar(currentResult.get<InfoLog<2, TokenType>*>()->ops[0]) || isVar(currentResult.get<InfoLog<2, TokenType>*>()->ops[1]))      // CHANGE THE ERROR MESSAGES TO TAKE AN OPERATION AS WELL!!!!!!!!!!!!!!!!
-						{
-							currentResult = previousResult;
-						}
-						else
-						{
-							isValid = false;
-							return;
-						}
-					}
-				}
-				else if(isOp(tree->children.at(index)->data))
-				{
-					recursiveArithmeticValidityCheck(tree->children.at(index), isValid);
-					if(!isValid){return;}
-				}
-			}
+      else
+      {
+        delete divNode->children[1];
+        divNode->children.erase(divNode->children.begin());
+        divNode->children[0]->data = dataQuotient;
+      }
 		}
 		else
 		{
 			return;
 		}
-	}
+  }
 
-
-	// All numeric constants should be simplified beforehand
-  void simpleCollectLikeTerms(ExpressionTreeNodePtr& tree)
+  void trySimplifyConstantsInPowNode(ExpressionTreeNodePtr& powNode)
   {
-    if(isAddChainNode(tree))
+    if(isData(powNode->children[0]->data) && isData(powNode->children[1]->data))
     {
-      std::map<std::vector<ExpressionTreeNodePtr>, ExpressionTreeNodePtr> likeVariableMap;
-      for(int sumIndex = 0; sumIndex < tree->children.size(); sumIndex++)
-      {
-        if(isMulChainNode(tree->children.at(sumIndex)))
-        {
-          std::vector<ExpressionTreeNodePtr> varList;
-          ExpressionTreeNodePtr partsToCollect;
-          bool shouldStopSearching = false;
-					if(isReal(tree->children.at(sumIndex)->children.at(0)->data))
-					{
-						partsToCollect = tree->children.at(sumIndex)->children.at(0);
-						varList = std::vector<ExpressionTreeNodePtr>(tree->children.at(sumIndex)->children.begin(),tree->children.at(sumIndex)->children.end());
-						if(static_cast<ExpressionTreeNode*>(likeVariableMap[varList]) == nullptr){likeVariableMap[varList] = new ExpressionTreeNode(Token(1));}
-						else if(isReal(likeVariableMap[varList]->data)){addRealNodeToRealNode(likeVariableMap[varList], partsToCollect);}
-						else if(isRealFraction(likeVariableMap[varList])){addRealNodeToRealFraction(likeVariableMap[varList], partsToCollect);}
-					}
-					else if(isRealFraction(tree->children.at(sumIndex)->children.at(0)))
-					{
-						partsToCollect = tree->children.at(sumIndex)->children.at(0);
-						varList = std::vector<ExpressionTreeNodePtr>(tree->children.at(sumIndex)->children.begin(),tree->children.at(sumIndex)->children.end());
-						if(static_cast<ExpressionTreeNode*>(likeVariableMap[varList]) == nullptr){likeVariableMap[varList] = new ExpressionTreeNode(Token(1));}
-						else if(isReal(likeVariableMap[varList]->data)){addRealFractionToRealNode(likeVariableMap[varList], partsToCollect);}
-						else if(isRealFraction(likeVariableMap[varList])){addRealFractionToRealFraction(likeVariableMap[varList], partsToCollect);}
-					}
-					else
-					{
-						shouldStopSearching = true;
-						break;
-					}
-          if(shouldStopSearching)
-          {
-            varList = tree->children.at(sumIndex)->children;
-            partsToCollect = new ExpressionTreeNode(Token(1));
-          }
-          tree->children.at(sumIndex)->children.clear();
-          delete tree->children.at(sumIndex);
-        }
-        else if(isVar(tree->children.at(sumIndex)->data))
-        {
-          likeVariableMap[{(tree->children.at(sumIndex))}] = (new ExpressionTreeNode(Token(1)));
-        }
-      }
-
-
-      tree->children.clear();
-      for(auto& [likeTerm, collectedPart] : likeVariableMap)
-      {
-        if(isReal(collectedPart->data)  &&  collectedPart->data == 1)
-        {
-          ExpressionTreeNodePtr new_term = new ExpressionTreeNode(Token(DT_MUL_CHAIN));
-					new_term->children = likeTerm;
-          tree->children.push_back(new_term);
-        }
-        else
-        {
-          ExpressionTreeNodePtr new_term = new ExpressionTreeNode(Token(DT_MUL_CHAIN));
-          new_term->children = {collectedPart};
-          new_term->children.insert(new_term->children.end(), likeTerm.begin(), likeTerm.end());
-          tree->children.push_back(new_term);
-        }
-      }
+      *powNode = ExpressionTreeNode(Token(pow(powNode->children[0]->data, powNode->children[1]->data)));
     }
   }
 }

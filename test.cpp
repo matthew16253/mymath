@@ -1,35 +1,38 @@
 #include<iostream>
+#include<string>
+#include<variant>
+#include<type_traits>
+#include<vector>
 #include<boost/multiprecision/cpp_dec_float.hpp>
+#include<boost/math/policies/error_handling.hpp>
 #include"fd_decs.hpp"
 
 int main()
 {
   //using namespace mymath;
+  // Token r_token = dec_float("6");
+  // Token real = dec_float("12.4");
+  // Token imag = dec_float("1");
+  // Token c_token = std::complex<Token>(real, imag);
+  // std::cout<<r_token<<"\n";
+  // std::cout<<c_token<<"\n";
+  // std::cout<<r_token*c_token<<"\n";
+
+  using dec = boost::multiprecision::number<boost::multiprecision::cpp_dec_float<100>>;
+
+  try
+  {
+    dec a("1e-67108860");
+    dec b("1e100");
+    std::cout<< std::numeric_limits<dec>::max()<<"\n";
+    std::cout<<a * b<<"\n";
+  }
+  catch(const std::exception& e)
+  {
+    std::cout << "EXCEPTION: \n " <<e.what();
+  }
 
 
-  // ExpressionTreeNodePtr node = new ExpressionTreeNode(Token(nullptr, OP_POWER));
-  // node->children.push_back(new ExpressionTreeNode(Token(nullptr, OP_MULTIPLY)));
-  //   node->children.at(0)->children.push_back(new ExpressionTreeNode(Token(nullptr, OP_MULTIPLY)));
-  //     node->children.at(0)->children.at(0)->children.push_back(new ExpressionTreeNode(Token(new long double(1), DT_REAL)));
-  //     node->children.at(0)->children.at(0)->children.push_back(new ExpressionTreeNode(Token(new long double(2), DT_REAL)));
-  //   node->children.at(0)->children.push_back(new ExpressionTreeNode(Token(new long double(3), DT_REAL)));
-  // node->children.push_back(new ExpressionTreeNode(Token(nullptr, OP_ADD)));
-  //   node->children.at(1)->children.push_back(new ExpressionTreeNode(Token(new long double(4), DT_REAL)));
-  //   node->children.at(1)->children.push_back(new ExpressionTreeNode(Token(new long double(5), DT_REAL)));
-  
-  // std::cout<<"\n\n\n\n"<<"before\n";
-  // print(node);
-
-  // formatArithmeticChains(node);
-
-  // std::cout<<"\n\n\n\n"<<"after\n";
-  // print(node);
-
-  // std::cout<<"\n\n\n\n"<<"after pow format\n";
-  // expandMulChainToPow(node);
-  // print(node);
-  
-
-  // delete node;
+  //delete frac;
   return 0;
 }

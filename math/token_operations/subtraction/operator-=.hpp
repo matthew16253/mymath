@@ -5,243 +5,133 @@
 
 namespace mymath
 {
-void mymath::Token::operator-=(const mymath::Token& b) // DO NOT USE THE INPUTTED TOKENS
-{
-  using namespace mymath;
-
-  if(b.type == DT_UNINIT)
+  template<typename A, typename B>
+  concept OperatorSubAssignOverloadExists_c = requires()
   {
-    return;
-  }
-  if(isError(type) || isError(b.type)){return;}
+    std::declval<A>() -= (std::declval<B>());
+  };
 
-  switch(type)
+  template<typename A, typename B>
+  struct OperatorSubAssignOverloadExists
   {
-    case DT_REAL:
+    static constexpr bool value = OperatorSubAssignOverloadExists_c<A,B>;
+  };
+  template<typename A, typename B>
+  constexpr bool OperatorSubAssignOverloadExists_v = OperatorSubAssignOverloadExists<A,B>::value;
+
+  template<typename A, typename B>
+  void tokenOperatorSubAssign(Token& a, const Token& b)
+  {
+    using noqual_A = std::remove_cv_t<std::remove_reference_t<A>>;
+    using noqual_B = std::remove_cv_t<std::remove_reference_t<B>>;
+
+    if constexpr(std::is_same_v<noqual_A, TokenType> || std::is_same_v<noqual_B, TokenType>)
     {
-      switch(b.type)
+      throw std::invalid_argument("get these tokentypes outta here kiddo");
+    }
+    else if constexpr(isInfoLog_v<noqual_A> || std::is_null_pointer_v<noqual_B>)
+    {
+      return;
+    }
+    else if constexpr(isInfoLog_v<noqual_B>)
+    {
+      a = b;
+    }
+    else if constexpr(std::is_null_pointer_v<noqual_A>)
+    {
+      a = -b;
+    }
+    else if constexpr(std::is_same_v<noqual_A, ExpressionTreeNodePtr> && std::is_same_v<noqual_B, ExpressionTreeNodePtr>)
+    {
+      const_cast<ExpressionTreeNodePtr&>(a.get<ExpressionTreeNodePtr>()) -= b.get<ExpressionTreeNodePtr>();
+    }
+    else if constexpr(std::is_same_v<noqual_A, ExpressionTreeNodePtr>)
+    {
+      const_cast<ExpressionTreeNodePtr&>(a.get<ExpressionTreeNodePtr>()) -= b;
+    }
+    else if constexpr(std::is_same_v<noqual_B, ExpressionTreeNodePtr>)
+    {
+      ExpressionTreeNodePtr new_a = new ExpressionTreeNode(*(-b.get<ExpressionTreeNodePtr>()));
+      new_a += a.get<ExpressionTreeNodePtr>();
+      a = new_a;
+    }
+    else if constexpr(std::is_same_v<noqual_A, std::complex<Token>*> && std::is_same_v<noqual_B, std::complex<Token>*>)
+    {
+      (*(a.get<std::complex<Token>*>())) += (*(b.get<std::complex<Token>*>()));
+    }
+    else if constexpr(std::is_same_v<noqual_A, std::complex<Token>*> && std::is_same_v<noqual_B, dec_float*>)
+    {
+      (*(a.get<std::complex<Token>*>())) += b;
+    }
+    else if constexpr(std::is_same_v<noqual_A, dec_float*> && std::is_same_v<noqual_B, std::complex<Token>*>)
+    {
+      std::complex<Token> new_a = (*b.get<std::complex<Token>*>());
+      new_a += a;
+      a = std::move(new_a);
+    }
+    else if constexpr(std::is_same_v<noqual_A, matn<Token>*> && std::is_same_v<noqual_B, matn<Token>*>)
+    {
+      if(a.get<matn<Token>*>()->width != b.get<matn<Token>*>()->width
+          ||  a.get<matn<Token>*>()->height != b.get<matn<Token>*>()->height)
       {
-        case DT_REAL:
-        {
-          *real_ptr -= *b.real_ptr;
-          break;
-        }
-        case DT_COMPLEX:
-        {
-          Token this_copy(new std::complex<Token>(*this,Token(new long double(), DT_REAL)), DT_COMPLEX);
-          *this_copy.complex_ptr -= *b.complex_ptr;
-          swap(*this,this_copy);
-          break;
-        }
-        case DT_ALGEBRAIC_EXPR:
-        {
-          // ExpressionTreeNode* new_tree = static_cast<ExpressionTreeNode*>(b.dataptr);
-          // applyBinaryOperation(new_tree,OP_ADD,*this);
-          // new_token = Token(new_tree,DT_ALGEBRAIC_EXPR);
-          Token b_copy = b;
-          ExpressionTreeNodePtr b_copy_expr_ptr = b_copy.expr_ptr;
-          applyBinaryOperation(*this,OP_SUBTRACT,b_copy_expr_ptr);
-          b_copy.expr_ptr = b_copy_expr_ptr;
-          swap(*this,b_copy);
-          break;
-        }
-        default:
-        {
-          TokenType arr[] = {type,b.type};
-          *this = Token(new InfoLog<2,TokenType>(arr),ERROR_INVALID_2_OPERANDS);
-          break;
-        }
+        MatDimension dimensionArray[2] = {MatDimension(a.get<matn<Token>*>()->width, a.get<matn<Token>*>()->height),
+                                          MatDimension(b.get<matn<Token>*>()->width, b.get<matn<Token>*>()->height)};
+        a = InfoLog<2, MatDimension>(dimensionArray);
       }
-      break;
-    }
-    case DT_COMPLEX:
-    {
-      switch(b.type)
+      else
       {
-        case DT_REAL:
-        {
-          *complex_ptr -= b;
-          break;
-        }
-        case DT_COMPLEX:
-        {
-          *complex_ptr -= *b.complex_ptr;
-          break;
-        }
-        case DT_ALGEBRAIC_EXPR:
-        {
-          Token b_copy(b);
-          ExpressionTreeNodePtr b_copy_expr_ptr = b_copy.expr_ptr;
-          applyBinaryOperation(*this,OP_SUBTRACT,b_copy_expr_ptr);
-          b_copy.expr_ptr = b_copy_expr_ptr;
-          swap(*this,b_copy);
-          break;
-        }
-        default:
-        {
-          TokenType arr[] = {type, b.type};
-          *this = Token(new InfoLog<2,TokenType>(arr), ERROR_INVALID_2_OPERANDS);
-          break;
-        }
+        (*a.get<matn<Token>*>()) -= (*b.get<matn<Token>*>());
       }
-      break;
     }
-    case DT_VECTOR:
+    else if constexpr(std::is_same_v<noqual_A, vecn<Token>*> && std::is_same_v<noqual_B, vecn<Token>*>)
     {
-      switch(b.type)
+      if(a.get<vecn<Token>*>()->height != b.get<vecn<Token>*>()->height)
       {
-        case DT_VECTOR:
-        {
-          if(vec_ptr->height != b.vec_ptr->height)
-          {
-            int arr[] = {vec_ptr->height,b.vec_ptr->height};
-            *this = Token(new InfoLog<2,int>(arr), ERROR_INVALID_VEC_DIMS);
-            break;
-          }
-          else
-          {
-            *vec_ptr -= *b.vec_ptr;
-            break;
-          }
-          break;
-        }
-        case DT_MATRIX:
-        {
-          if(vec_ptr->height != b.mat_ptr->width  &&  b.mat_ptr->height != 1)
-          {
-            MatDimension arr[] = {MatDimension(vec_ptr->height,1) ,
-              MatDimension(b.mat_ptr->width,b.mat_ptr->height)};
-            *this = Token(new InfoLog<2,MatDimension>(arr)  ,  ERROR_INVALID_MAT_DIMS);
-            break;
-          }
-          else
-          {
-            *vec_ptr -= *mat_ptr;
-            break;
-          }
-        }
-        case DT_ALGEBRAIC_EXPR:
-        {
-          Token b_copy(b);
-          ExpressionTreeNodePtr b_copy_expr_ptr = b_copy.expr_ptr;
-          applyBinaryOperation(*this,OP_SUBTRACT,b_copy_expr_ptr);
-          b_copy.expr_ptr = b_copy_expr_ptr;
-          swap(*this,b_copy);
-          break;
-        }
-        default:
-        {
-          TokenType arr[] = {type,b.type};
-          *this = Token(new InfoLog<2,TokenType>(arr), ERROR_INVALID_2_OPERANDS);
-          break;
-        }
+        MatDimension dimensionArray[2] = {MatDimension(1, a.get<vecn<Token>*>()->height),
+                                          MatDimension(1, b.get<vecn<Token>*>()->height)};
+        a = InfoLog<2, MatDimension>(dimensionArray);
       }
-      break;
-    }
-    case DT_MATRIX:
-    {
-      switch(b.type)
+      else
       {
-        case DT_VECTOR:
-        {
-          if(mat_ptr->width != b.vec_ptr->height  &&  mat_ptr->height != 1)
-          {
-            MatDimension arr[] = {MatDimension(mat_ptr->width,mat_ptr->height) ,
-              MatDimension(b.vec_ptr->height,1)};
-            *this = Token(new InfoLog<2,MatDimension>(arr)  ,  ERROR_INVALID_MAT_DIMS);
-            break;
-          }
-          else
-          {
-            *mat_ptr -= *b.vec_ptr;
-            break;
-          }
-        }
-        case DT_MATRIX:
-        {
-          if(mat_ptr->width != b.mat_ptr->width  &&  mat_ptr->height != b.mat_ptr->height)
-          {
-            MatDimension arr[] = {MatDimension(mat_ptr->width,mat_ptr->height) ,
-              MatDimension(b.mat_ptr->width,b.mat_ptr->height)};
-            *this = Token(new InfoLog<2,MatDimension>(arr)  ,  ERROR_INVALID_MAT_DIMS);
-            break;
-          }
-          else
-          {
-            *mat_ptr -= *b.mat_ptr;
-            break;
-          }
-        }
-        case DT_ALGEBRAIC_EXPR:
-        {
-          Token b_copy(b);
-          ExpressionTreeNodePtr b_copy_expr_ptr = b_copy.expr_ptr;
-          applyBinaryOperation(*this,OP_SUBTRACT,b_copy_expr_ptr);
-          b_copy.expr_ptr = b_copy_expr_ptr;
-          swap(*this,b_copy);
-          break;
-        }
-        default:
-        {
-          TokenType arr[] = {type,b.type};
-          *this = Token(new InfoLog<2,TokenType>(arr), ERROR_INVALID_2_OPERANDS);
-          break;
-        }
+        (*a.get<vecn<Token>*>()) -= (*b.get<vecn<Token>*>());
       }
-      break;
     }
-    case DT_ALGEBRAIC_EXPR:
+    else if constexpr(std::is_same_v<noqual_A, dec_float*> && std::is_same_v<noqual_B, dec_float*>)
     {
-      ExpressionTreeNodePtr _expr_ptr = expr_ptr;
-      switch(b.type)
+      *(a.get<dec_float*>()) += *(b.get<dec_float*>());
+      if(a.get<dec_float*>()->backend().isinf())
       {
-        case DT_REAL:
-        {
-          applyBinaryOperation(_expr_ptr, OP_SUBTRACT, b);
-          break;
-        }
-        case DT_COMPLEX:
-        {
-          applyBinaryOperation(_expr_ptr, OP_SUBTRACT, b);
-          break;
-        }
-        case DT_VECTOR:
-        {
-          applyBinaryOperation(_expr_ptr, OP_SUBTRACT, b);
-          break;
-        }
-        case DT_MATRIX:
-        {
-          applyBinaryOperation(_expr_ptr, OP_SUBTRACT, b);
-          break;
-        }
-        case DT_ALGEBRAIC_EXPR:
-        {
-          ExpressionTreeNodePtr b_expr_ptr = b.expr_ptr;
-          applyBinaryOperation(_expr_ptr, OP_SUBTRACT, b_expr_ptr);
-          break;
-        }
-        default:
-        {
-          TokenType arr[] = {type,b.type};
-          *this = Token(new InfoLog<2,TokenType>(arr), ERROR_INVALID_2_OPERANDS);
-          break;
-        }
+        a = Token(ERROR_INF);
       }
-      break;
+      else
+      {
+        //
+      }
     }
-    case DT_UNINIT:
+    // else if constexpr(OperatorSubAssignOverloadExists_v<std::remove_pointer_t<noqual_A>, std::remove_pointer_t<noqual_B>>)
+    // {
+    //   *(a.get<noqual_A>()) -= *(b.get<noqual_B>());
+    // }
+    else
     {
-      *this = -b;
-      break;
-    }
-    default:
-    {
-      TokenType arr[] = {type,b.type};
-      *this = Token(new InfoLog<2,TokenType>(arr), ERROR_INVALID_2_OPERANDS);
-      break;
+      a = Token(InfoLog<2, int>(ERROR_INVALID_OPERATOR_SUBTRACT_ASSIGN_OPERANDS, {getTokenType<noqual_A>(), getTokenType<noqual_B>()}));
     }
   }
+
+  struct tokenVariantOperatorSubAssignVisitor
+  {
+    tokenVariantOperatorSubAssignVisitor() {}
+    template<typename A, typename B>
+    void operator()(Token& a, const Token& b)
+    {
+      tokenOperatorSubAssign<A,B>(a,b);
+    }
+  };
+
+  void Token::operator-=(const Token& other)
+  {
+    return std::visit([&](auto& arg1, auto& arg2){return tokenVariantOperatorSubAssignVisitor().operator()<std::remove_reference_t<decltype(arg1)>, std::remove_reference_t<decltype(arg2)>>(*this,other);}, dataVariant, other.dataVariant);
+  }
 }
-}
+
 #endif

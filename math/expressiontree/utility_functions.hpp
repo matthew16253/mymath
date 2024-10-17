@@ -8,89 +8,135 @@
 namespace mymath
 {
 
-  bool isAddNode(ExpressionTreeNodePtr tree)
+  bool isAdd(Token& token)
   {
-    if(std::holds_alternative<TokenType>(tree->data.dataVariant))
+    if(token.is_type<TokenType>())
     {
-      return std::get<TokenType>(tree->data.dataVariant) == OP_ADD;
+      return (token.get<TokenType>() == OP_ADD);
     }
     return false;
   }
-  bool isMulNode(ExpressionTreeNodePtr tree)
+  bool isMul(Token& token)
   {
-    if(std::holds_alternative<TokenType>(tree->data.dataVariant))
+    if(token.is_type<TokenType>())
     {
-      return std::get<TokenType>(tree->data.dataVariant) == OP_MULTIPLY;
+      return (token.get<TokenType>() == OP_MULTIPLY);
     }
     return false;
   }
-  bool isDivNode(ExpressionTreeNodePtr tree)
+  bool isDiv(Token& token)
   {
-    if(std::holds_alternative<TokenType>(tree->data.dataVariant))
+    if(token.is_type<TokenType>())
     {
-      return std::get<TokenType>(tree->data.dataVariant) == OP_DIVIDE;
+      return token.get<TokenType>() == OP_DIVIDE;
     }
     return false;
   }
-  bool isMulDivNode(ExpressionTreeNodePtr tree)
+  bool isMulDiv(Token& token)
   {
-    return (isDivNode(tree) || isMulNode(tree));
+    return (isDiv(token) || isMul(token));
   }
-  bool isPowNode(ExpressionTreeNodePtr tree)
+  bool isPow(Token& token)
   {
-    if(std::holds_alternative<TokenType>(tree->data.dataVariant))
+    if(token.is_type<TokenType>())
     {
-      return std::get<TokenType>(tree->data.dataVariant) == OP_POWER;
+      return token.get<TokenType>() == OP_POWER;
     }
     return false;
   }
-  bool isMulChainNode(ExpressionTreeNodePtr tree)
+  bool isMulChain(Token& token)
   {
-    if(std::holds_alternative<TokenType>(tree->data.dataVariant))
+    if(token.is_type<TokenType>())
     {
-      return std::get<TokenType>(tree->data.dataVariant) == DT_MUL_CHAIN;
+      return token.get<TokenType>() == DT_MUL_CHAIN;
     }
     return false;
   }
-  bool isAddChainNode(ExpressionTreeNodePtr tree)
+  bool isAddChain(Token& token)
   {
-    if(std::holds_alternative<TokenType>(tree->data.dataVariant))
+    if(token.is_type<TokenType>())
     {
-      return std::get<TokenType>(tree->data.dataVariant) == DT_SUM_CHAIN;
+      return token.get<TokenType>() == DT_SUM_CHAIN;
     }
     return false;
   }
+  bool isDiv(ExpressionTreeNodePtr tree)
+  {
+    return isDiv(tree->data);
+  }
+  bool isPow(ExpressionTreeNodePtr tree)
+  {
+    return isPow(tree->data);
+  }
+  bool isMulChain(ExpressionTreeNodePtr tree)
+  {
+    return isMulChain(tree->data);
+  }
+  bool isAddChain(ExpressionTreeNodePtr tree)
+  {
+    return isAddChain(tree->data);
+  }
+  // bool isCommutativeOperator(ExpressionTreeNodePtr tree)
+  // {
+  //   ;
+  // }
 
-  void addRealNodeToRealNode(ExpressionTreeNodePtr real_this, ExpressionTreeNodePtr real_other)
+  void addRealNodeToRealNode(ExpressionTreeNodePtr& real_this, ExpressionTreeNodePtr real_other)
   {
-    *std::get<long double*>(real_this->data.dataVariant) += *std::get<long double*>(real_other->data.dataVariant);
+    *std::get<dec_float*>(real_this->data.dataVariant) += *std::get<dec_float*>(real_other->data.dataVariant);
   }
-  void addRealNodeToRealFraction(ExpressionTreeNodePtr realFraction_this, ExpressionTreeNodePtr real_other)
+  void addRealNodeToRealFraction(ExpressionTreeNodePtr& realFraction_this, ExpressionTreeNodePtr real_other)
   {
-    *std::get<long double*>(realFraction_this->children.at(0)->data.dataVariant) += (*std::get<long double*>(realFraction_this->children.at(1)->data.dataVariant)) * (*std::get<long double*>(real_other->data.dataVariant));
+    *std::get<dec_float*>(realFraction_this->children.at(0)->data.dataVariant) += (*std::get<dec_float*>(realFraction_this->children.at(1)->data.dataVariant)) * (*std::get<dec_float*>(real_other->data.dataVariant));
   }
-  void addRealFractionToRealFraction(ExpressionTreeNodePtr realFraction_this, ExpressionTreeNodePtr realFraction_other)
+  void addRealFractionToRealFraction(ExpressionTreeNodePtr& realFraction_this, ExpressionTreeNodePtr realFraction_other)
   {
-    *std::get<long double*>(realFraction_this->children.at(0)->data.dataVariant) = (*std::get<long double*>(realFraction_this->children.at(0)->data.dataVariant)) * (*std::get<long double*>(realFraction_this->children.at(1)->data.dataVariant))
+    *std::get<dec_float*>(realFraction_this->children.at(0)->data.dataVariant) = (*std::get<dec_float*>(realFraction_this->children.at(0)->data.dataVariant)) * (*std::get<dec_float*>(realFraction_this->children.at(1)->data.dataVariant))
                                 +
-                                (*std::get<long double*>(realFraction_other->children.at(0)->data.dataVariant)) * (*std::get<long double*>(realFraction_this->children.at(1)->data.dataVariant));
-    *std::get<long double*>(realFraction_this->children.at(1)->data.dataVariant) = (*std::get<long double*>(realFraction_this->children.at(1)->data.dataVariant)) * (*std::get<long double*>(realFraction_this->children.at(1)->data.dataVariant));
+                                (*std::get<dec_float*>(realFraction_other->children.at(0)->data.dataVariant)) * (*std::get<dec_float*>(realFraction_this->children.at(1)->data.dataVariant));
+    *std::get<dec_float*>(realFraction_this->children.at(1)->data.dataVariant) = (*std::get<dec_float*>(realFraction_this->children.at(1)->data.dataVariant)) * (*std::get<dec_float*>(realFraction_this->children.at(1)->data.dataVariant));
 
     simplifyRealFraction(realFraction_this);
   }
-  void addRealFractionToRealNode(ExpressionTreeNodePtr real_this, ExpressionTreeNodePtr realFraction_other)
+  void addRealFractionToRealNode(ExpressionTreeNodePtr& real_this, ExpressionTreeNodePtr realFraction_other)
   {
     ExpressionTreeNodePtr realFraction_other_copy = new ExpressionTreeNode(*realFraction_other);
     addRealNodeToRealFraction(realFraction_other_copy, real_this);
-    *real_this = *realFraction_other_copy;
+    delete real_this;
+    real_this = realFraction_other_copy;
   }
+  
+  void realNodeAndRealFractionNodePlusAssign(ExpressionTreeNodePtr& a, ExpressionTreeNodePtr b)
+  {
+    if(isReal(a->data) && isReal(b->data))
+    {
+      addRealNodeToRealNode(a, b);
+    }
+    else if(isReal(a->data) && isRealFraction(b))
+    {
+      addRealFractionToRealNode(a, b);
+    }
+    else if(isRealFraction(a) && isReal(b->data))
+    {
+      addRealNodeToRealFraction(a, b);
+    }
+    else if(isRealFraction(a) && isRealFraction(b))
+    {
+      addRealFractionToRealFraction(a, b);
+    }
+    else
+    {
+      throw std::runtime_error("not real node or real fraction");
+    }
+  }
+
   void simplifyRealFraction(ExpressionTreeNodePtr realFraction_this)
   {
     // do later pls :DDDD
   }
   bool isRealFraction(ExpressionTreeNodePtr tree)
   {
-    return isDivNode(tree) && isReal(tree->children[0]->data) && isReal(tree->children[1]->data);
+    return isDiv(tree->data) && isReal(tree->children[0]->data) && isReal(tree->children[1]->data);
   }
 }
 

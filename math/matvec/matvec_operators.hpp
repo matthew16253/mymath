@@ -85,12 +85,19 @@ namespace mymath
   template<typename T>
   void print(const mymath::vecn<T>& a)
   {
-    std::cout << "[";
+    std::cout<<a;
+  }
+  
+  template<typename T>
+  std::ostream& operator<<(std::ostream& os, const vecn<T>& a)
+  {
+    os << "[";
     for(int y = 0; y < a.height; y++)
     {
-      std::cout << a.at(y);
-      std::cout << "\n";
+      os << a.at(y);
+      os << "\n";
     }
+    return os;
   }
 
   template<typename T>
@@ -108,11 +115,11 @@ namespace mymath
   template<typename T>
   mymath::vecn<T> cross(const mymath::vecn<T>& a, const mymath::vecn<T>& b)
   {
-    T vals = 
+    T vals[3] = 
     {
-      a.at(2)*b.at(3) + a.at(3)*b.at(2),
-      a.at(3)*b.at(1) + a.at(1)*b.at(3),
-      a.at(1)*b.at(2) + a.at(2)*b.at(1)
+      (a.at(2))*(b.at(3)) + (a.at(3))*(b.at(2)),
+      (a.at(3))*(b.at(1)) + (a.at(1))*(b.at(3)),
+      (a.at(1))*(b.at(2)) + (a.at(2))*(b.at(1))
     };
     mymath::vecn<T> c(a.height,vals);
     return c;
@@ -434,15 +441,22 @@ namespace mymath
   template<typename T>
   void print(const mymath::matn<T>& a)
   {
-    std::cout << "[";
+    std::cout<<a;
+  }
+
+  template<typename T>
+  std::ostream& operator<<(std::ostream& os, const matn<T>& a)
+  {
+    os << "[";
     for(int y = 0; y < a.height; y++)
     {
       for(int x = 0; x < a.width; x++)
       {
-        std::cout << a.at(x,y) << ",";
+       os << a.at(x,y) << ",";
       }
-      std::cout << "\n";
+      os << "\n";
     }
+    return os;
   }
 }
 
