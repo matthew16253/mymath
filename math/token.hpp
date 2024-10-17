@@ -3,116 +3,220 @@
 
 #include<complex>
 #include<type_traits>
+#include<concepts>
 
 #include"../fd_decs.hpp"
 
 namespace mymath
 {
-  Token::Token() : dataptr(nullptr), type(DT_UNINIT)  {}
-  Token::Token(void* _dataptr,TokenType _type) : dataptr(_dataptr), type(_type)  {}
+  struct tokenVariantDeleter
+  {
+    template<typename T>
+    requires is_pointer<T> or std::same_as<T, ExpressionTreeNodePtr>
+    void operator()(T& data)
+    {
+      delete data;
+    }
+    template<typename T>
+    void operator()(const T& data) {}
+  };
+
+  struct tokenVariantCopyConstructor
+  {
+    tokenVariant& to_be_assigned_to;
+    tokenVariantCopyConstructor(tokenVariant& _to_be_assigned_to) : to_be_assigned_to(_to_be_assigned_to)  {}
+    template<typename T>
+    requires is_pointer<T>
+    void operator()(T data)
+    {
+      to_be_assigned_to = new typename std::remove_pointer<T>(*data);
+    }
+    template<typename T>
+    void operator()(T data)
+    {
+      to_be_assigned_to = data;
+    }
+  };
+
+  struct tokenVariantPrinter
+  {
+    std::ostream& os;
+    tokenVariantPrinter(std::ostream& _os) : os(_os)  {}
+    template<typename T>
+    void operator()(T data)
+    {
+      using noqual_T = std::remove_reference_t<std::remove_cv_t<T>>;
+      if constexpr(isInfoLog_v<noqual_T> || std::is_same_v<noqual_T, std::nullptr_t>)
+      {
+        throw std::invalid_argument("this type is not printable");
+      }
+      else if constexpr(std::is_pointer_v<noqual_T>)
+      {
+       os << *data;
+      }
+      else
+      {
+        os << data;
+      }
+    }
+  };
+
+  struct tokenVariantMoveConstructor
+  {
+    tokenVariant& to_be_assigned_to;
+    tokenVariantMoveConstructor(tokenVariant& _to_be_assigned_to) : to_be_assigned_to(_to_be_assigned_to)  {}
+    template<typename T>
+    void operator()(const T& data)
+    {
+      to_be_assigned_to = data;
+    }
+  };
+
+  struct tokenVariantComparor
+  {
+    template<typename A, typename B>
+    bool operator()(A a, B b)
+    {
+      if constexpr(std::is_same_v<A, B>)
+      {
+        if constexpr(isInfoLog_v<A>)
+        {
+          return false;
+        }
+        else if constexpr(std::is_same_v<A, ExpressionTreeNodePtr> || std::is_pointer_v<A>)
+        {
+          return (*a == *b);
+        }
+        else
+        {
+          return (a == b);
+        }
+      }
+      else
+      {
+        return false;
+      }
+    }
+  };
+
+
+
+  Token::Token() : dataVariant(std::nullptr_t())  {}
+
   Token::~Token()
   {
-    switch(type)
+    std::visit(tokenVariantDeleter{}, dataVariant);
+  }
+
+  Token::Token(const Token& other)
+  {
+    std::visit(tokenVariantCopyConstructor(dataVariant), other.dataVariant);
+  }
+
+  template<typename T>
+  requires (!std::is_same_v<std::remove_reference_t<std::remove_cv_t<T>>, Token>)
+  Token::Token(const T& other)
+  {
+    this->~Token();
+    if constexpr(std::is_same_v<T, TokenType> || std::is_same_v<T, ExpressionTreeNodePtr>)
     {
-      case DT_REAL:  {delete static_cast<long double*>(dataptr);break;}
-      case DT_COMPLEX:  {delete static_cast<std::complex<Token>*>(dataptr);break;}
-      case DT_VECTOR:  {delete static_cast<mymath::vecn<Token>*>(dataptr);break;}
-      case DT_MATRIX:  {delete static_cast<mymath::matn<Token>*>(dataptr);break;}
-      case DT_ALGEBRAIC_EXPR:  {delete static_cast<ExpressionTreeNode*>(dataptr);break;}
-      default:  {}
+      this->dataVariant = other;
+    }
+    else if constexpr(std::is_same_v<T, ExpressionTreeNode>)
+    {
+      this->dataVariant = ExpressionTreeNodePtr(new ExpressionTreeNode(other));
+    }
+    else if constexpr(std::is_pointer_v<T>)
+    {
+      this->dataVariant = other;
+    }
+    else
+    {
+      this->dataVariant = new T(other);
     }
   }
 
-  Token::Token(const Token& other)  :  type(other.type)
+  Token::Token(Token&& other)
   {
-    switch(other.type)
-    {
-      case DT_REAL:
-        {dataptr = static_cast<void*>(new long double(*static_cast<long double*>(other.dataptr)));  break;}
-      case DT_COMPLEX:
-        {dataptr = static_cast<void*>(new std::complex<Token>(*static_cast<std::complex<Token>*>(other.dataptr)));  break;}
-      case DT_VECTOR:
-        {dataptr = static_cast<void*>(new mymath::vecn(*static_cast<mymath::vecn<Token>*>(other.dataptr)));  break;}
-      case DT_MATRIX:
-        {dataptr = static_cast<void*>(new mymath::matn<Token>(*static_cast<mymath::matn<Token>*>(other.dataptr)));  break;}
-      case DT_ALGEBRAIC_EXPR:
-        {dataptr = static_cast<void*>(new mymath::ExpressionTreeNode(*static_cast<mymath::ExpressionTreeNode*>(other.dataptr)));  break;}
-      default:  {}
-    }
-  }
-
-
-  Token::Token(long double other) : dataptr(new long double(other)), type(DT_REAL)  {}
-  Token::Token(const std::complex<Token>& other) : dataptr(new std::complex<Token>(other)), type(DT_COMPLEX)  {}
-  Token::Token(const vecn<Token>& other) : dataptr(new vecn<Token>(other)), type(DT_VECTOR)  {}
-  Token::Token(const matn<Token>& other) : dataptr(new matn<Token>(other)), type(DT_MATRIX)  {}
-  Token::Token(const ExpressionTreeNode& other) :dataptr(new ExpressionTreeNode(other)), type(DT_ALGEBRAIC_EXPR)  {}
-
-  Token Token::operator=(long double other){*this = Token(other);}
-  Token Token::operator=(const std::complex<Token>& other){*this = Token(other);}
-  Token Token::operator=(const vecn<Token>& other){*this = Token(other);}
-  Token Token::operator=(const matn<Token>& other){*this = Token(other);}
-  Token Token::operator=(const ExpressionTreeNode& other){*this = Token(other);}
-
-
-
-  Token::Token(Token&& other) : dataptr(other.dataptr), type(other.type)
-  {
-    other.empty();
+    std::visit(tokenVariantMoveConstructor(dataVariant), other.dataVariant);
   }
   
   Token& Token::operator=(Token other)
   {
-    swap(*this,other);
+    //Token other_copy = other;
+    swap(*this, other);
     return *this;
   }
-  
-  void Token::empty()
+
+  template<typename T>
+  requires (!std::is_same_v<std::remove_reference_t<std::remove_cv_t<T>>, Token>)
+  Token& Token::operator=(const T& other)
   {
-    dataptr = nullptr;
-    type = DT_UNINIT;
+    *this = Token(other);
+    return *this;
+  }
+
+  template<typename T>
+  requires (!std::is_same_v<std::remove_reference_t<std::remove_cv_t<T>>, Token>)
+  Token& Token::operator=(T&& other)
+  {
+    *this = Token(other);
+    return *this;
   }
 
   std::ostream& operator<<(std::ostream& os, const Token& token)
   {
-    switch(token.type)
-    {
-      case DT_REAL:
-      {
-        os <<"("<<*token.real_ptr<<")";
-        break;
-      }
-      case DT_COMPLEX:
-      {
-        os <<"("<<*token.complex_ptr->real().real_ptr<<"+"<<*token.complex_ptr->imag().real_ptr<<"i)";
-        break;
-      }
-      case DT_VECTOR:
-      {
-        os <<"[";
-        for(int index = 0; index < token.vec_ptr->height; index++)
-        {
-          os <<token.vec_ptr->at(index)<<",\n";
-        }
-        os <<"]";
-        break;
-      }
-      case DT_MATRIX:
-      {
-        os <<"[";
-        for(int y = 0; y < token.mat_ptr->height; y++)
-        {
-          for(int x = 0; x < token.mat_ptr->width; x++)
-          {
-            os <<token.mat_ptr->at(x,y)<<",";
-          }
-          os <<", ";
-        }
-        os <<"]";
-        break;
-      }
-    }
+    std::visit(tokenVariantPrinter(os), token.dataVariant);
     return os;
+  }
+
+  bool operator==(const Token& a, const Token& b)
+  {
+    return std::visit(tokenVariantComparor{}, a.dataVariant, b.dataVariant);
+  }
+
+  template<typename T>
+  const T& Token::get() const
+  {
+    return std::get<T>(dataVariant);
+  }
+
+  template<typename T>
+  bool Token::is_type()
+  {
+    return std::holds_alternative<T>(dataVariant);
+  }
+
+
+
+
+  template<typename T>
+  constexpr TokenType getTokenType()
+  {
+    if constexpr(std::is_same_v<std::remove_pointer_t<T>, dec_float>)
+    {
+      return DT_REAL;
+    }
+    else if constexpr(std::is_same_v<std::remove_pointer_t<T>, std::complex<Token>>)
+    {
+      return DT_COMPLEX;
+    }
+    else if constexpr(std::is_same_v<std::remove_pointer_t<T>, matn<Token>>)
+    {
+      return DT_MAT;
+    }
+    else if constexpr(std::is_same_v<std::remove_pointer_t<T>, vecn<Token>>)
+    {
+      return DT_VEC;
+    }
+    else if constexpr(std::is_same_v<T, ExpressionTreeNodePtr> || std::is_same_v<T, ExpressionTreeNode>)
+    {
+      return DT_EXPR;
+    }
+    else
+    {
+      return DT_NOT_DATA;
+    }
   }
 
 }
@@ -121,7 +225,10 @@ namespace mymath
 #include"token_operations/addition/operator+=.hpp"
 #include"token_operations/subtraction/operator-.hpp"
 #include"token_operations/subtraction/operator-=.hpp"
-
-#include"complex/template_specializations.hpp"
+#include"token_operations/multiplication/operator(asterisk).hpp"
+#include"token_operations/multiplication/operator(asterisk)=.hpp"
+#include"token_operations/division/operator(fd_slash).hpp"
+#include"token_operations/division/operator(fd_slash)=.hpp"
+#include"token_operations/functions/pow.hpp"
 
 #endif

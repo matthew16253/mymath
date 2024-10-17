@@ -5,159 +5,103 @@
 
 namespace mymath
 {
-  void Token::operator/=(const Token& a)
+  template<typename A, typename B>
+  concept OperatorDivideAssignOverloadExists_c = requires()
   {
-    if(isError(type) || isError(a.type)){return;}
-    switch(type)
+    std::declval<A>() /= std::declval<B>();
+  };
+
+  template<typename A, typename B>
+  constexpr bool OperatorDivideAssignOverloadExists_v = OperatorDivideAssignOverloadExists_c<A,B>;
+
+  template<typename A, typename B>
+  void tokenOperatorDivideAssign(Token& a, const Token& b)
+  {
+    using noqual_A = std::remove_cv_t<std::remove_reference_t<A>>;
+    using noqual_B = std::remove_cv_t<std::remove_reference_t<B>>;
+    if constexpr(std::is_same_v<noqual_A, TokenType> || std::is_same_v<noqual_B, TokenType>)
     {
-      case DT_REAL:
+      throw std::invalid_argument("no tokentypes for operator+ sowwy :(");
+    }
+    else if constexpr(isInfoLog_v<noqual_A> || std::is_null_pointer_v<noqual_B>)
+    {
+      //a = a;
+    }
+    else if constexpr(isInfoLog_v<noqual_B> || std::is_null_pointer_v<noqual_A>)
+    {
+      a = b;
+    }
+    else if constexpr(std::is_same_v<noqual_A, ExpressionTreeNodePtr> && std::is_same_v<noqual_B, ExpressionTreeNodePtr>)
+    {
+      const_cast<ExpressionTreeNodePtr&>(a.get<ExpressionTreeNodePtr>()) /= b.get<ExpressionTreeNodePtr>();
+    }
+    else if constexpr(std::is_same_v<noqual_A, ExpressionTreeNodePtr>)
+    {
+      const_cast<ExpressionTreeNodePtr&>(a.get<ExpressionTreeNodePtr>()) /= b;
+    }
+    else if constexpr(std::is_same_v<noqual_B, ExpressionTreeNodePtr>)
+    {
+      ExpressionTreeNodePtr new_a = new ExpressionTreeNode(*const_cast<ExpressionTreeNodePtr&>(b.get<ExpressionTreeNodePtr>()));
+      new_a /= a.get<ExpressionTreeNodePtr>();
+      a = new_a;
+    }
+    else if constexpr(std::is_same_v<noqual_A, std::complex<Token>*> && std::is_same_v<noqual_B, std::complex<Token>*>)
+    {
+      (*(a.get<std::complex<Token>*>())) /= (*(b.get<std::complex<Token>*>()));
+    }
+    else if constexpr(std::is_same_v<noqual_A, std::complex<Token>*> && std::is_same_v<noqual_B, dec_float*>)
+    {
+      (*(a.get<std::complex<Token>*>())) /= b;
+    }
+    else if constexpr(std::is_same_v<noqual_A, dec_float*> && std::is_same_v<noqual_B, std::complex<Token>*>)
+    {
+      std::complex<Token> new_a = *b.get<std::complex<Token>*>();
+      new_a /= (*(b.get<std::complex<Token>*>()));
+      a = std::move(new_a);
+    }
+    else if constexpr(std::is_same_v<noqual_A, dec_float*> && std::is_same_v<noqual_B, dec_float*>)
+    {
+      *(a.get<dec_float*>()) /= *(b.get<dec_float*>());
+      if(isOverflow(*a.get<dec_float*>()))
       {
-        switch(a.type)
-        {
-          case DT_REAL:
-          {
-            *real_ptr /= *a.real_ptr;
-            break;
-          }
-          case DT_COMPLEX:
-          {
-            Token this_copy(new std::complex<Token>(*this, Token(new long double(0), DT_REAL)),DT_COMPLEX);
-            *this_copy.complex_ptr /= *a.complex_ptr;
-            break;;
-          }
-          case DT_ALGEBRAIC_EXPR:
-          {
-            Token a_copy(a);
-            ExpressionTreeNodePtr a_copy_expr_ptr = a_copy.expr_ptr;
-            applyBinaryOperation(a_copy_expr_ptr, OP_DIVIDE, *this);
-            a_copy.expr_ptr = expr_ptr;
-            swap(*this,a_copy);
-            break;
-          }
-        }
-        break;
+        a = Token(ERROR_DIV_OVERFLOW);
       }
-      case DT_COMPLEX:
+      else if(isUnderflow(*a.get<dec_float*>()))
       {
-        switch(a.type)
-        {
-          case DT_REAL:
-          {
-            *complex_ptr *= a;
-            break;
-          }
-          case DT_COMPLEX:
-          {
-            *complex_ptr *= *a.complex_ptr;
-            break;
-          }
-          case DT_ALGEBRAIC_EXPR:
-          {
-            Token a_copy(a);
-            ExpressionTreeNodePtr a_copy_expr_ptr = a_copy.expr_ptr;
-            applyBinaryOperation(a_copy_expr_ptr, OP_DIVIDE, *this);
-            a_copy.expr_ptr = expr_ptr;
-            swap(*this, a_copy);
-            break;
-          }
-        }
-        break;
+        a = Token(ERROR_DIV_UNDERFLOW);
       }
-      case DT_VECTOR:
+      else if(isDomainError(*a.get<dec_float*>()))
       {
-        switch(a.type)
-        {
-          case DT_REAL:
-          {
-            *vec_ptr /= a;
-            break;
-          }
-          case DT_COMPLEX:
-          {
-            *vec_ptr /= a;
-            break;
-          }
-          case DT_ALGEBRAIC_EXPR:
-          {
-            Token a_copy(a);
-            ExpressionTreeNodePtr a_copy_expr_ptr = a_copy.expr_ptr;
-            applyBinaryOperation(a_copy_expr_ptr, OP_DIVIDE, *this);          
-            a_copy.expr_ptr = expr_ptr;  
-            swap(*this,a_copy);
-            break;
-          }
-        }
-        break;
+        a = Token(ERROR_DIV_BY_ZERO);
       }
-      case DT_MATRIX:
-      switch(a.type)
+      else
       {
-        case DT_REAL:
-        {
-          *mat_ptr /= a;
-          break;
-        }
-        case DT_COMPLEX:
-        {
-          *mat_ptr /= a;
-          break;
-        }
-        case DT_ALGEBRAIC_EXPR:
-        {
-          Token a_copy(a);
-          ExpressionTreeNodePtr a_copy_expr_ptr = a_copy.expr_ptr;
-          applyBinaryOperation(a_copy_expr_ptr, OP_DIVIDE, *this);          
-          a_copy.expr_ptr = expr_ptr;            
-          swap(*this,a_copy);
-          break;
-        }
-        break;
-      }
-      case DT_ALGEBRAIC_EXPR:
-      {
-        switch(a.type)
-        {
-          ExpressionTreeNodePtr _expr_ptr = expr_ptr;
-          case DT_REAL:
-          {
-            applyBinaryOperation(_expr_ptr, OP_DIVIDE, a);
-            expr_ptr = _expr_ptr;
-            break;
-          }
-          case DT_COMPLEX:
-          {
-            applyBinaryOperation(_expr_ptr, OP_DIVIDE, a);
-            expr_ptr = _expr_ptr;
-            break;
-          }
-          case DT_VECTOR:
-          {
-            applyBinaryOperation(_expr_ptr, OP_DIVIDE, a);
-            expr_ptr = _expr_ptr;
-            break;
-          }
-          case DT_MATRIX:
-          {
-            applyBinaryOperation(_expr_ptr, OP_DIVIDE, a);
-            expr_ptr = _expr_ptr;
-            break;
-          }
-          case DT_ALGEBRAIC_EXPR:
-          {
-            ExpressionTreeNodePtr a_expr_ptr = a.expr_ptr;
-            applyBinaryOperation(_expr_ptr, OP_DIVIDE, a_expr_ptr);
-            expr_ptr = _expr_ptr;
-            break;
-          }
-        }
-        break;
-      }
-      case DT_UNINIT:
-      {
-        *this = Token(nullptr, DT_UNINIT);
-        break;
+        //
       }
     }
+    // else if constexpr(OperatorDivideAssignOverloadExists_v<std::remove_pointer_t<noqual_A>, std::remove_pointer_t<noqual_B>>)
+    // {
+    //   *(a.get<noqual_A>()) /= *(b.get<noqual_B>());
+    // }
+    else
+    {
+      a = Token(InfoLog<2, int>(ERROR_INVALID_DIV_OPERANDS, {getTokenType<noqual_A>(), getTokenType<noqual_B>()}));
+    }
+  }
+
+  struct tokenVariantOperatorDivideAssignVisitor
+  {
+    tokenVariantOperatorDivideAssignVisitor() {}
+    template<typename A, typename B>
+    void operator()(Token& a, const Token& b)
+    {
+      tokenOperatorDivideAssign<A,B>(a,b);
+    }
+  };
+
+  void Token::operator/=(const Token& other)
+  {
+    std::visit([&](auto& arg1, auto& arg2){return tokenVariantOperatorDivideAssignVisitor().operator()<std::remove_reference_t<decltype(arg1)>, std::remove_reference_t<decltype(arg2)>>(*this,other);}, this->dataVariant, other.dataVariant);
   }
 }
 

@@ -41,6 +41,20 @@ namespace mymath
   {
     return data[index];
   }
+
+  template<typename T>
+  bool operator==(const vecn<T>& a, const vecn<T>& b)
+  {
+    if(a.height != b.height){return false;}
+    else
+    {
+      for(int index = 0; index < a.height; index++)
+      {
+        if(a.at(index) != b.at(index)){return false;}
+      }
+      return true;
+    }
+  }
 }
 
 

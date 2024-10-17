@@ -18,6 +18,20 @@ namespace mymath
     std::copy(newdata, newdata+_width*_height, data);
   }
 
+  template<typename T>
+  bool operator==(const matn<T>& a, const matn<T>& b)
+  {
+    if(a.height != b.height && a.width != b.width){return false;}
+    else
+    {
+      for(int index = 0; index < a.height*a.width; index++)
+      {
+        if(a.at(index) != b.at(index)){return false;}
+      }
+      return true;
+    }
+  }
+
 
   template<typename T>
   matn<T>::matn(const matn<T>& other) : width(other.width), height(other.height), data(new T[width*height])
